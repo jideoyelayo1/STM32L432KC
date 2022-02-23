@@ -446,7 +446,7 @@ public partial class STM32 : Form
             Update_FileName_Textbox("Running");
             
         }
-        else { Update_FileName_Textbox("You need to add a file to Run");
+        else { Update_FileName_Textbox("No File Added");
             
         }
     }
@@ -488,7 +488,7 @@ public partial class STM32 : Form
         }
         else
         {
-            Update_FileName_Textbox("You need to add a file to Run");
+            Update_FileName_Textbox("No File Added");
 
         }
     }
