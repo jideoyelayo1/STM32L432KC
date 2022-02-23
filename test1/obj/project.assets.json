@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\JideO\\OneDrive\\Documents\\Warwick\\Year 3\\ES327 - Individual Project\\IndividualProject\\test1\\test1.csproj",
+      "projectUniqueName": "C:\\Users\\JideO\\OneDrive\\Documents\\Warwick\\Year 3\\ES327 - Individual Project\\STM32L432KC\\test1\\test1.csproj",
       "projectName": "test1",
-      "projectPath": "C:\\Users\\JideO\\OneDrive\\Documents\\Warwick\\Year 3\\ES327 - Individual Project\\IndividualProject\\test1\\test1.csproj",
+      "projectPath": "C:\\Users\\JideO\\OneDrive\\Documents\\Warwick\\Year 3\\ES327 - Individual Project\\STM32L432KC\\test1\\test1.csproj",
       "packagesPath": "C:\\Users\\JideO\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\JideO\\OneDrive\\Documents\\Warwick\\Year 3\\ES327 - Individual Project\\IndividualProject\\test1\\obj\\",
+      "outputPath": "C:\\Users\\JideO\\OneDrive\\Documents\\Warwick\\Year 3\\ES327 - Individual Project\\STM32L432KC\\test1\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
