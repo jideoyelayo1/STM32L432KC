@@ -500,18 +500,19 @@ partial class STM32
             // 
             // Pause_Button
             // 
-            this.Pause_Button.Location = new System.Drawing.Point(442, 12);
+            this.Pause_Button.Location = new System.Drawing.Point(437, 12);
             this.Pause_Button.Name = "Pause_Button";
             this.Pause_Button.Size = new System.Drawing.Size(94, 29);
             this.Pause_Button.TabIndex = 41;
             this.Pause_Button.Text = "Pause";
             this.Pause_Button.UseVisualStyleBackColor = true;
+            this.Pause_Button.Click += new System.EventHandler(this.Pause_Button_Click);
             // 
             // STM32
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1057, 642);
+            this.ClientSize = new System.Drawing.Size(1061, 658);
             this.Controls.Add(this.Pause_Button);
             this.Controls.Add(this.Restart_button);
             this.Controls.Add(this.Step_button);

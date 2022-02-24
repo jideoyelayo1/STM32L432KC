@@ -17,6 +17,8 @@ public partial class STM32 : Form
     public static string CurrInstru = "";
     public static string NextInstru = "";
 
+    public static bool Pause_Bool = false;
+
     public  void Update_Intr()
     {
         //if(NextInstru != null )
@@ -41,6 +43,15 @@ public partial class STM32 : Form
 
         while (REG[15] < yLen - startingPC)
         {
+            // Adding a pause button
+            while (true)
+            {
+                if (!Pause_Bool)
+                    break;
+
+                await Task.Delay(20);
+
+            }
             //Update varibles
             Update();
 
@@ -454,6 +465,7 @@ public partial class STM32 : Form
     private void Reset_Button_Click(object sender, EventArgs e)
     {
         Update_FileName_Textbox("Please Wait clearing Memory");
+        Pause_Bool = false;
         if (REG[15] != 0)
         {
             
@@ -496,5 +508,18 @@ public partial class STM32 : Form
     private void Restart_button_Click(object sender, EventArgs e)
     {
         System.Windows.Forms.Application.Restart();
+    }
+    
+    private void Pause_Button_Click(object sender, EventArgs e)
+    {
+        if (Pause_Bool) // Pause is on
+        {
+            Pause_Bool = false;
+        }
+        else if (!Pause_Bool) // pause is off
+        {
+            Pause_Bool = true;
+        }
+        
     }
 }
