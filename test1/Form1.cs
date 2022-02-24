@@ -7,7 +7,7 @@ public partial class STM32 : Form
 {
     public STM32()
     {
-        InitializeComponent();     
+        InitializeComponent();
     }
 
     #region FrontEnd
@@ -483,7 +483,6 @@ public partial class STM32 : Form
             }
 
             //Array.Clear(Memory, 0, Memory.Length);
-
             
             Update_FileName_Textbox("Reset Finished");
         }
