@@ -75,6 +75,8 @@ partial class STM32
             this.Next_Instru_textBox = new System.Windows.Forms.TextBox();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.Step_button = new System.Windows.Forms.Button();
+            this.Restart_button = new System.Windows.Forms.Button();
+            this.Pause_Button = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox3)).BeginInit();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -486,11 +488,32 @@ partial class STM32
             this.Step_button.UseVisualStyleBackColor = true;
             this.Step_button.Click += new System.EventHandler(this.Step_button_Click);
             // 
+            // Restart_button
+            // 
+            this.Restart_button.Location = new System.Drawing.Point(352, 12);
+            this.Restart_button.Name = "Restart_button";
+            this.Restart_button.Size = new System.Drawing.Size(66, 29);
+            this.Restart_button.TabIndex = 40;
+            this.Restart_button.Text = "Restart";
+            this.Restart_button.UseVisualStyleBackColor = true;
+            this.Restart_button.Click += new System.EventHandler(this.Restart_button_Click);
+            // 
+            // Pause_Button
+            // 
+            this.Pause_Button.Location = new System.Drawing.Point(442, 12);
+            this.Pause_Button.Name = "Pause_Button";
+            this.Pause_Button.Size = new System.Drawing.Size(94, 29);
+            this.Pause_Button.TabIndex = 41;
+            this.Pause_Button.Text = "Pause";
+            this.Pause_Button.UseVisualStyleBackColor = true;
+            // 
             // STM32
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1057, 642);
+            this.Controls.Add(this.Pause_Button);
+            this.Controls.Add(this.Restart_button);
             this.Controls.Add(this.Step_button);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.Reset_Button);
@@ -586,8 +609,15 @@ partial class STM32
         if(txt == "Please Wait clearing Memory")
         {
             this.Reset_Button.BackColor = Color.Black;
+        }else if(txt == "Running")
+        {
+            this.FileTextBox.BackColor = Color.Green;
+
         }
-        else { this.Reset_Button.BackColor= Color.DarkGray;}
+        else { 
+            this.Reset_Button.BackColor= Color.DarkGray;
+            this.FileTextBox.BackColor = Color.LightGray;
+        }
     }
     private  void Update()
     {
@@ -710,4 +740,6 @@ partial class STM32
     private TextBox Next_Instru_textBox;
     private System.ComponentModel.BackgroundWorker backgroundWorker1;
     private Button Step_button;
+    private Button Restart_button;
+    private Button Pause_Button;
 }

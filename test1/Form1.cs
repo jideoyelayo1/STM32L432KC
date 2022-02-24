@@ -493,5 +493,8 @@ public partial class STM32 : Form
         }
     }
 
-
+    private void Restart_button_Click(object sender, EventArgs e)
+    {
+        System.Windows.Forms.Application.Restart();
+    }
 }
