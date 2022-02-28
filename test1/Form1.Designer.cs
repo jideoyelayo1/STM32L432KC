@@ -28,6 +28,7 @@ partial class STM32
     /// </summary>
     private void InitializeComponent()
     {
+            this.components = new System.ComponentModel.Container();
             this.pictureBox3 = new System.Windows.Forms.PictureBox();
             this.PA7 = new System.Windows.Forms.Button();
             this.PA6 = new System.Windows.Forms.Button();
@@ -77,9 +78,13 @@ partial class STM32
             this.Step_button = new System.Windows.Forms.Button();
             this.Restart_button = new System.Windows.Forms.Button();
             this.Pause_Button = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
+            this.imageList1 = new System.Windows.Forms.ImageList(this.components);
+            this.PWM = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox3)).BeginInit();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PWM)).BeginInit();
             this.SuspendLayout();
             // 
             // pictureBox3
@@ -508,11 +513,39 @@ partial class STM32
             this.Pause_Button.UseVisualStyleBackColor = true;
             this.Pause_Button.Click += new System.EventHandler(this.Pause_Button_Click);
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(508, 110);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(94, 29);
+            this.button1.TabIndex = 42;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            // 
+            // imageList1
+            // 
+            this.imageList1.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
+            this.imageList1.ImageSize = new System.Drawing.Size(16, 16);
+            this.imageList1.TransparentColor = System.Drawing.Color.Transparent;
+            // 
+            // PWM
+            // 
+            this.PWM.Image = global::test1.Properties.Resources.PictureOfBlackLine;
+            this.PWM.Location = new System.Drawing.Point(393, 266);
+            this.PWM.Name = "PWM";
+            this.PWM.Size = new System.Drawing.Size(179, 147);
+            this.PWM.TabIndex = 43;
+            this.PWM.TabStop = false;
+        
+        
+            // 
             // STM32
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1061, 658);
+            this.ClientSize = new System.Drawing.Size(1073, 706);
+            this.Controls.Add(this.PWM);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.Pause_Button);
             this.Controls.Add(this.Restart_button);
             this.Controls.Add(this.Step_button);
@@ -562,6 +595,7 @@ partial class STM32
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PWM)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -601,6 +635,17 @@ partial class STM32
     private void Update_Current_Instr_textbox(string txt)
     {
         this.Current_Instr_textBox.Text = "Current Instruction: " + txt;
+    }
+
+    private void RotatePWM(long CCR1)
+    {
+        Bitmap bmp = new Bitmap(this.PWM.Image);
+        if(CCR1 > 1)
+        bmp.RotateFlip(RotateFlipType.Rotate90FlipNone);
+        else
+            bmp.RotateFlip(RotateFlipType.Rotate270FlipNone);
+        this.PWM.Image = bmp;
+
     }
 
 
@@ -692,6 +737,10 @@ partial class STM32
 
     #endregion
 
+    // RotateImage
+    
+
+
     private PictureBox pictureBox1;
     private PictureBox pictureBox2;
     private PictureBox pictureBox3;
@@ -743,4 +792,7 @@ partial class STM32
     private Button Step_button;
     private Button Restart_button;
     private Button Pause_Button;
+    private Button button1;
+    private ImageList imageList1;
+    private PictureBox PWM;
 }

@@ -63,6 +63,16 @@ namespace test1.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap line {
+            get {
+                object obj = ResourceManager.GetObject("line", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap MCU_Board {
             get {
                 object obj = ResourceManager.GetObject("MCU_Board", resourceCulture);
@@ -86,6 +96,16 @@ namespace test1.Properties {
         internal static System.Drawing.Bitmap MCU_nucleo_stm32l432kc1 {
             get {
                 object obj = ResourceManager.GetObject("MCU_nucleo_stm32l432kc1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap PictureOfBlackLine {
+            get {
+                object obj = ResourceManager.GetObject("PictureOfBlackLine", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

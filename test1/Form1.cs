@@ -439,6 +439,297 @@ public partial class STM32 : Form
 
     #endregion
 
+    #region Timer
+    //TIM2 TIM3 TIM15 TIM16 TIM1 TIM6 TIM7
+    void UpdateTimers()
+    {
+        Update_TIM1();
+        Update_TIM6();
+        Update_TIM7();
+
+    }
+    #region TIM1
+
+    // PWM Timer 1
+    long TIM1_PSC;
+    long TIM1_ARR;
+    long TIM1_CNT;
+    long TIM1_CCMR1;
+    long TIM1_CCER;
+    long TIM1_CCR1; long Old_TIM1_CCR1;
+    long TIM1_BDTR;
+    long TIM1_CR1;
+    long TIM1_SR;
+
+    void Update_TIM1()
+    {
+         TIM1_PSC = Memory[0x40012c28];
+         TIM1_ARR = Memory[0x40012c2c];
+         TIM1_CNT = Memory[0x40012c24];
+         TIM1_CCR1= Memory[0x40012c34];
+         TIM1_CR1 = Memory[0x40012c00];
+         Run_TIM1();
+        if( TIM1_CCR1 != Old_TIM1_CCR1 )
+        {
+            RotatePWM(TIM1_CCR1);
+            Old_TIM1_CCR1 = TIM1_CCR1;
+
+        }
+    }
+    async void Run_TIM1()
+    {
+        
+        if (TIM1_PSC != 0 && TIM1_ARR != 0 && TIM1_CR1 != 0)
+        {
+            Begin_TIM1:
+            int freq = (int)( (TIM1_PSC * TIM1_ARR*4)/ 16000);
+            TIM1_SR = 0; Memory[0x40012c10] &= 0;//Update SR
+            await Task.Delay((int)(TIM1_CNT - 0) * (freq));
+            TIM1_SR = 1; Memory[0x40012c10] |= 1;
+            await Task.Delay((int)(TIM1_ARR-TIM1_CNT ) * (freq));
+            TIM1_SR = 0; Memory[0x40012c10] &= 0;
+            await Task.Delay((int)(TIM1_PSC-TIM1_ARR) * (freq));
+            goto Begin_TIM1;
+        }
+    }
+
+    #endregion
+    #region TIM7
+
+    // PWM Timer 1
+    long TIM7_PSC;
+    long TIM7_ARR;
+    long TIM7_CNT;
+    long TIM7_CR1;
+    long TIM7_SR;
+
+    void Update_TIM7()
+    {
+        TIM7_PSC = Memory[0x40001428];
+        TIM7_ARR = Memory[0x4000142c];
+        TIM7_CNT = Memory[0x40001424];
+        TIM7_CR1 = Memory[0x40001400];
+        Run_TIM7();
+    }
+    async void Run_TIM7()
+    {
+
+        if (TIM7_PSC != 0 && TIM7_ARR != 0 && TIM7_CR1 != 0)
+        {
+        Begin_TIM7:
+            int freq = (int)((TIM7_PSC * TIM7_ARR * 4) / 16000);
+            TIM7_SR = 0; Memory[0x40014c10] &= 0;//Update SR
+            await Task.Delay((int)(TIM7_CNT - 0) * (freq));
+            TIM7_SR = 1; Memory[0x40014c10] |= 1;
+            await Task.Delay((int)(TIM7_ARR - TIM7_CNT) * (freq));
+            TIM7_SR = 0; Memory[0x40014c10] &= 0;
+            await Task.Delay((int)(TIM7_PSC - TIM7_ARR) * (freq));
+            goto Begin_TIM7;
+        }
+    }
+
+
+
+    #endregion
+    #region TIM6
+
+    // PWM Timer 1
+    long TIM6_PSC;
+    long TIM6_ARR;
+    long TIM6_CNT;
+    long TIM6_CR1;
+    long TIM6_SR;
+
+    void Update_TIM6()
+    {
+        TIM6_PSC = Memory[0x40001028];
+        TIM6_ARR = Memory[0x4000102c];
+        TIM6_CNT = Memory[0x40001024];
+        TIM6_CR1 = Memory[0x40001000];
+        Run_TIM6();
+    }
+    async void Run_TIM6()
+    {
+
+        if (TIM6_PSC != 0 && TIM6_ARR != 0 && TIM6_CR1 != 0)
+        {
+        Begin_TIM6:
+            int freq = (int)((TIM6_PSC * TIM6_ARR * 4) / 16000);
+            TIM6_SR = 0; Memory[0x40010c10] &= 0;//Update SR
+            await Task.Delay((int)(TIM6_CNT - 0) * (freq));
+            TIM6_SR = 1; Memory[0x40010c10] |= 1;
+            await Task.Delay((int)(TIM6_ARR - TIM6_CNT) * (freq));
+            TIM6_SR = 0; Memory[0x40010c10] &= 0;
+            await Task.Delay((int)(TIM6_PSC - TIM6_ARR) * (freq));
+            goto Begin_TIM6;
+        }
+    }
+
+
+
+    #endregion
+    #region TIM16
+
+    // PWM Timer 1
+    long TIM16_PSC;
+    long TIM16_ARR;
+    long TIM16_CNT;
+    long TIM16_CCMR1;
+    long TIM16_CCER;
+    long TIM16_CCR1; long Old_TIM16_CCR1;
+    long TIM16_BDTR;
+    long TIM16_CR1;
+    long TIM16_SR;
+
+    void Update_TIM16()
+    {
+        TIM16_PSC = Memory[0x40014428];
+        TIM16_ARR = Memory[0x4001442c];
+        TIM16_CNT = Memory[0x40014424];
+        TIM16_CCR1 = Memory[0x40014434];
+        TIM16_CR1 = Memory[0x40014400];
+        Run_TIM16();
+
+    }
+    async void Run_TIM16()
+    {
+
+        if (TIM16_PSC != 0 && TIM16_ARR != 0 && TIM16_CR1 != 0)
+        {
+        Begin_TIM16:
+            int freq = (int)((TIM16_PSC * TIM16_ARR * 4) / 16000);
+            TIM16_SR = 0; Memory[0x40014410] &= 0;//Update SR
+            await Task.Delay((int)(TIM16_CNT - 0) * (freq));
+            TIM16_SR = 1; Memory[0x40014410] |= 1;
+            await Task.Delay((int)(TIM16_ARR - TIM16_CNT) * (freq));
+            TIM16_SR = 0; Memory[0x40014410] &= 0;
+            await Task.Delay((int)(TIM16_PSC - TIM16_ARR) * (freq));
+            goto Begin_TIM16;
+        }
+    }
+    #endregion
+    #region TIM15
+
+    // PWM Timer 1
+    long TIM15_PSC;
+    long TIM15_ARR;
+    long TIM15_CNT;
+    long TIM15_CCMR1;
+    long TIM15_CCER;
+    long TIM15_CCR1; long Old_TIM15_CCR1;
+    long TIM15_BDTR;
+    long TIM15_CR1;
+    long TIM15_SR;
+
+    void Update_TIM15()
+    {
+        TIM15_PSC = Memory[0x40014028];
+        TIM15_ARR = Memory[0x4001402c];
+        TIM15_CNT = Memory[0x40014024];
+        TIM15_CCR1 = Memory[0x40014034];
+        TIM15_CR1 = Memory[0x40014000];
+        Run_TIM15();
+
+    }
+    async void Run_TIM15()
+    {
+
+        if (TIM15_PSC != 0 && TIM15_ARR != 0 && TIM15_CR1 != 0)
+        {
+        Begin_TIM15:
+            int freq = (int)((TIM15_PSC * TIM15_ARR * 4) / 16000);
+            TIM15_SR = 0; Memory[0x40014010] &= 0;//Update SR
+            await Task.Delay((int)(TIM15_CNT - 0) * (freq));
+            TIM15_SR = 1; Memory[0x40014010] |= 1;
+            await Task.Delay((int)(TIM15_ARR - TIM15_CNT) * (freq));
+            TIM15_SR = 0; Memory[0x40014010] &= 0;
+            await Task.Delay((int)(TIM15_PSC - TIM15_ARR) * (freq));
+            goto Begin_TIM15;
+        }
+    }
+    #endregion
+    #region TIM3
+
+    // PWM Timer 1
+    long TIM3_PSC;
+    long TIM3_ARR;
+    long TIM3_CNT;
+    long TIM3_CCMR1;
+    long TIM3_CCER;
+    long TIM3_CCR1; long Old_TIM3_CCR1;
+    long TIM3_BDTR;
+    long TIM3_CR1;
+    long TIM3_SR;
+
+    void Update_TIM3()
+    {
+        TIM3_PSC = Memory[0x40000428];
+        TIM3_ARR = Memory[0x4000042c];
+        TIM3_CNT = Memory[0x40000424];
+        TIM3_CCR1 = Memory[0x40000434];
+        TIM3_CR1 = Memory[0x40000400];
+        Run_TIM3();
+
+    }
+    async void Run_TIM3()
+    {
+
+        if (TIM3_PSC != 0 && TIM3_ARR != 0 && TIM3_CR1 != 0)
+        {
+        Begin_TIM3:
+            int freq = (int)((TIM3_PSC * TIM3_ARR * 4) / 16000);
+            TIM3_SR = 0; Memory[0x40000410] &= 0;//Update SR
+            await Task.Delay((int)(TIM3_CNT - 0) * (freq));
+            TIM3_SR = 1; Memory[0x40000410] |= 1;
+            await Task.Delay((int)(TIM3_ARR - TIM3_CNT) * (freq));
+            TIM3_SR = 0; Memory[0x40000410] &= 0;
+            await Task.Delay((int)(TIM3_PSC - TIM3_ARR) * (freq));
+            goto Begin_TIM3;
+        }
+    }
+    #endregion
+    #region TIM2
+
+    // PWM Timer 1
+    long TIM2_PSC;
+    long TIM2_ARR;
+    long TIM2_CNT;
+    long TIM2_CCMR1;
+    long TIM2_CCER;
+    long TIM2_CCR1; long Old_TIM2_CCR1;
+    long TIM2_BDTR;
+    long TIM2_CR1;
+    long TIM2_SR;
+
+    void Update_TIM2()
+    {
+        TIM2_PSC = Memory[0x40000028];
+        TIM2_ARR = Memory[0x4000002c];
+        TIM2_CNT = Memory[0x40000024];
+        TIM2_CCR1 = Memory[0x40000034];
+        TIM2_CR1 = Memory[0x40000000];
+        Run_TIM2();
+
+    }
+    async void Run_TIM2()
+    {
+
+        if (TIM2_PSC != 0 && TIM2_ARR != 0 && TIM2_CR1 != 0)
+        {
+        Begin_TIM2:
+            int freq = (int)((TIM2_PSC * TIM2_ARR * 4) / 16000);
+            TIM2_SR = 0; Memory[0x40000010] &= 0;//Update SR
+            await Task.Delay((int)(TIM2_CNT - 0) * (freq));
+            TIM2_SR = 1; Memory[0x40000010] |= 1;
+            await Task.Delay((int)(TIM2_ARR - TIM2_CNT) * (freq));
+            TIM2_SR = 0; Memory[0x40000010] &= 0;
+            await Task.Delay((int)(TIM2_PSC - TIM2_ARR) * (freq));
+            goto Begin_TIM2;
+        }
+    }
+    #endregion
+
+
     private void Load_file_Click(object sender, EventArgs e)
     {
         OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -521,4 +812,7 @@ public partial class STM32 : Form
         }
         
     }
+   
+
+   
 }
