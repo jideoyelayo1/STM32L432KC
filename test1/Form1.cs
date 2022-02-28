@@ -446,6 +446,10 @@ public partial class STM32 : Form
         Update_TIM1();
         Update_TIM6();
         Update_TIM7();
+        Update_TIM16();
+        Update_TIM15();
+        Update_TIM3();
+        Update_TIM2();
 
     }
     #region TIM1
