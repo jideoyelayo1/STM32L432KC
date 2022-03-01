@@ -222,6 +222,7 @@ partial class STM32
             this.PB3.TabIndex = 14;
             this.PB3.Text = "PB3";
             this.PB3.UseVisualStyleBackColor = true;
+            this.PB3.Click += new System.EventHandler(this.PB3_Click);
             // 
             // PA0
             // 
@@ -249,6 +250,7 @@ partial class STM32
             this.PB5.TabIndex = 29;
             this.PB5.Text = "PB5";
             this.PB5.UseVisualStyleBackColor = true;
+            this.PB5.Click += new System.EventHandler(this.PB5_Click);
             // 
             // PA9
             // 
@@ -330,6 +332,7 @@ partial class STM32
             this.PB1.TabIndex = 20;
             this.PB1.Text = "PB1";
             this.PB1.UseVisualStyleBackColor = true;
+            this.PB1.Click += new System.EventHandler(this.PB1_Click);
             // 
             // PB6
             // 
@@ -348,6 +351,7 @@ partial class STM32
             this.PB7.TabIndex = 18;
             this.PB7.Text = "PB7";
             this.PB7.UseVisualStyleBackColor = true;
+            this.PB7.Click += new System.EventHandler(this.PB7_Click);
             // 
             // PB0
             // 
@@ -357,6 +361,7 @@ partial class STM32
             this.PB0.TabIndex = 17;
             this.PB0.Text = "PB0";
             this.PB0.UseVisualStyleBackColor = true;
+            this.PB0.Click += new System.EventHandler(this.PB0_Click);
             // 
             // PA12
             // 
@@ -375,6 +380,7 @@ partial class STM32
             this.PB4.TabIndex = 31;
             this.PB4.Text = "PB4";
             this.PB4.UseVisualStyleBackColor = true;
+            this.PB4.Click += new System.EventHandler(this.PB4_Click);
             // 
             // PA2
             // 

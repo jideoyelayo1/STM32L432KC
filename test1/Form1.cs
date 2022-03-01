@@ -853,4 +853,88 @@ public partial class STM32 : Form
         LookAtInputTextBox = true;
         Run(this.InputBox.Text);
     }
+    bool PB3_bool = false;
+    private void PB3_Click(object sender, EventArgs e)
+    {
+        if (!PB3_bool)
+        {
+            PB3_bool = true;
+            this.PB3.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB3_bool = false;
+            this.PB3.BackColor = Color.Red;
+        }
+    }
+    bool PB4_bool = false;
+    private void PB4_Click(object sender, EventArgs e)
+    {
+        if (!PB4_bool)
+        {
+            PB4_bool = true;
+            this.PB4.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB4_bool = false;
+            this.PB4.BackColor = Color.Red;
+        }
+    }
+    bool PB5_bool = false;
+    private void PB5_Click(object sender, EventArgs e)
+    {
+        if (!PB5_bool)
+        {
+            PB5_bool = true;
+            this.PB5.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB5_bool = false;
+            this.PB5.BackColor = Color.Red;
+        }
+    }
+    bool PB7_bool = false;
+    private void PB7_Click(object sender, EventArgs e)
+    {
+        if (!PB7_bool)
+        {
+            PB7_bool = true;
+            this.PB7.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB7_bool = false;
+            this.PB7.BackColor = Color.Red;
+        }
+    }
+    bool PB0_bool = false;
+    private void PB0_Click(object sender, EventArgs e)
+    {
+        if (!PB0_bool)
+        {
+            PB0_bool = true;
+            this.PB0.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB0_bool = false;
+            this.PB0.BackColor = Color.Red;
+        }
+    }
+    bool PB1_bool = false;
+    private void PB1_Click(object sender, EventArgs e)
+    {
+        if (!PB1_bool)
+        {
+            PB1_bool = true;
+            this.PB1.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB1_bool = false;
+            this.PB1.BackColor = Color.Red;
+        }
+    }
 }
