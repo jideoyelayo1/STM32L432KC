@@ -26,10 +26,10 @@ public partial class STM32 : Form
         //if( CurrInstru != null )
             Update_Current_Instr_textbox(CurrInstru);
     }
-    
 
-    
-    
+
+
+
 
     #endregion
 
@@ -38,8 +38,16 @@ public partial class STM32 : Form
     async void Run(string fname)
     {
         REG[15] = startingPC;
-        var lines = Enumerable.ToArray(File.ReadLines(fname));
-        var yLen = lines.Length;
+        string[] lines;
+        long yLen;
+        if (LookAtInputTextBox) {
+            var a = this.InputBox.Text;
+             lines = a.Split("\n").ToArray();
+             yLen = lines.Length;
+                }else {
+             lines = Enumerable.ToArray(File.ReadLines(fname));
+             yLen = lines.Length;
+        }
 
         while (REG[15] < yLen - startingPC)
         {
@@ -452,6 +460,17 @@ public partial class STM32 : Form
         Update_TIM2();
 
     }
+    string LongToString32(long number)
+    {
+
+        string b = Convert.ToString(number, 2);
+        var bNum = b.Length;
+        for (var i = 32 - bNum; i > 0; i--)
+        {
+            b = "0" + b;
+        }
+        return b;
+    }
     #region TIM1
 
     // PWM Timer 1
@@ -483,7 +502,7 @@ public partial class STM32 : Form
     async void Run_TIM1()
     {
         
-        if (TIM1_PSC != 0 && TIM1_ARR != 0 && TIM1_CR1 != 0)
+        if (TIM1_PSC != 0 && TIM1_ARR != 0 && TIM1_CR1 != 0&& LongToString32(Memory[0x48000420])[4..8] == "0001") // Only for PB6
         {
             Begin_TIM1:
             int freq = (int)( (TIM1_PSC * TIM1_ARR*4)/ 16000);
@@ -732,6 +751,8 @@ public partial class STM32 : Form
         }
     }
     #endregion
+    #endregion
+
 
 
     private void Load_file_Click(object sender, EventArgs e)
@@ -739,6 +760,7 @@ public partial class STM32 : Form
         OpenFileDialog openFileDialog = new OpenFileDialog();
         if (openFileDialog.ShowDialog() == DialogResult.OK)
         {
+            LookAtInputTextBox = false;
             fileToRun = openFileDialog.FileName;
             Update_FileName_Textbox("File Loaded");
         }
@@ -746,9 +768,11 @@ public partial class STM32 : Form
 
     private  void StartButton_Click(object sender, EventArgs e)
     {
-        if(fileToRun != null)
+        if(fileToRun != null && !LookAtInputTextBox)
         {
-            Run(fileToRun);
+            if (LookAtInputTextBox == false)
+                Run(fileToRun);
+            else Run(this.InputBox.Text);
             Update_FileName_Textbox("Running");
             
         }
@@ -786,9 +810,11 @@ public partial class STM32 : Form
 
     private void Step_button_Click(object sender, EventArgs e)
     {
-        if (fileToRun != null)
+        if (fileToRun != null && !LookAtInputTextBox)
         {
-            Step(fileToRun);
+            if (LookAtInputTextBox == false)
+                Step(fileToRun);
+            else Step(this.InputBox.Text);
             Update_FileName_Textbox("Running");
 
         }
@@ -816,7 +842,15 @@ public partial class STM32 : Form
         }
         
     }
-   
 
-   
+    private void STM32_Load(object sender, EventArgs e)
+    {
+
+    }
+    bool LookAtInputTextBox = false;
+    private void Input_TextBox_Click(object sender, EventArgs e)
+    {
+        LookAtInputTextBox = true;
+        Run(this.InputBox.Text);
+    }
 }

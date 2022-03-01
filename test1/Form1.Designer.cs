@@ -78,9 +78,10 @@ partial class STM32
             this.Step_button = new System.Windows.Forms.Button();
             this.Restart_button = new System.Windows.Forms.Button();
             this.Pause_Button = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
             this.PWM = new System.Windows.Forms.PictureBox();
+            this.InputBox = new System.Windows.Forms.TextBox();
+            this.Input_TextBox = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox3)).BeginInit();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -513,15 +514,6 @@ partial class STM32
             this.Pause_Button.UseVisualStyleBackColor = true;
             this.Pause_Button.Click += new System.EventHandler(this.Pause_Button_Click);
             // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(508, 110);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(94, 29);
-            this.button1.TabIndex = 42;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            // 
             // imageList1
             // 
             this.imageList1.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
@@ -536,16 +528,33 @@ partial class STM32
             this.PWM.Size = new System.Drawing.Size(179, 147);
             this.PWM.TabIndex = 43;
             this.PWM.TabStop = false;
-        
-        
+            // 
+            // InputBox
+            // 
+            this.InputBox.Location = new System.Drawing.Point(31, 375);
+            this.InputBox.Multiline = true;
+            this.InputBox.Name = "InputBox";
+            this.InputBox.Size = new System.Drawing.Size(339, 335);
+            this.InputBox.TabIndex = 44;
+            // 
+            // Input_TextBox
+            // 
+            this.Input_TextBox.Location = new System.Drawing.Point(406, 433);
+            this.Input_TextBox.Name = "Input_TextBox";
+            this.Input_TextBox.Size = new System.Drawing.Size(166, 29);
+            this.Input_TextBox.TabIndex = 45;
+            this.Input_TextBox.Text = "Load TextBox";
+            this.Input_TextBox.UseVisualStyleBackColor = true;
+            this.Input_TextBox.Click += new System.EventHandler(this.Input_TextBox_Click);
             // 
             // STM32
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1073, 706);
+            this.ClientSize = new System.Drawing.Size(1077, 722);
+            this.Controls.Add(this.Input_TextBox);
+            this.Controls.Add(this.InputBox);
             this.Controls.Add(this.PWM);
-            this.Controls.Add(this.button1);
             this.Controls.Add(this.Pause_Button);
             this.Controls.Add(this.Restart_button);
             this.Controls.Add(this.Step_button);
@@ -590,6 +599,7 @@ partial class STM32
             this.Controls.Add(this.pictureBox3);
             this.Name = "STM32";
             this.Text = "STM32L432KC Emulator";
+            this.Load += new System.EventHandler(this.STM32_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox3)).EndInit();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
@@ -792,7 +802,8 @@ partial class STM32
     private Button Step_button;
     private Button Restart_button;
     private Button Pause_Button;
-    private Button button1;
     private ImageList imageList1;
     private PictureBox PWM;
+    private TextBox InputBox;
+    private Button Input_TextBox;
 }
