@@ -62,6 +62,7 @@ public partial class STM32 : Form
             }
             //Update varibles
             Update();
+            UpdateButtons();
 
             // Update Instruction TextBoxes
             CurrInstru = lines[REG[15]];
@@ -73,7 +74,7 @@ public partial class STM32 : Form
             Running(lines[REG[15]]);
             UpdatingOutputs();
             REG[15]++;
-            Update();
+            Update(); UpdateButtons();
 
             // Update Instruction TextBoxes
             if (REG[15] < yLen) CurrInstru = lines[REG[15]];
@@ -93,7 +94,7 @@ public partial class STM32 : Form
         var yLen = lines.Length;
         if (lines.Length > startingPC && lines[startingPC] != String.Empty)
         {
-            Update();
+            Update(); UpdateButtons();
             REG[15] = startingPC;
 
             // Update Instruction TextBoxes
@@ -107,7 +108,7 @@ public partial class STM32 : Form
             UpdatingOutputs();
             REG[15]++;
             startingPC = REG[15];
-            Update();
+            Update(); UpdateButtons();
             await Task.Delay(ClockSpeed);
         }
 
@@ -845,6 +846,26 @@ public partial class STM32 : Form
 
     private void STM32_Load(object sender, EventArgs e)
     {
+
+    }
+    private void UpdateButtons()
+    {
+        string B_IDR = "";
+        if (PB0_bool) B_IDR += '1';//PB0
+        else B_IDR += '0';
+        if (PB0_bool) B_IDR += '1';//PB1
+        else B_IDR += '0';
+        B_IDR += '0';//PB2
+        if (PB0_bool) B_IDR += '1';//PB3
+        else B_IDR += '0';
+        if (PB0_bool) B_IDR += '1';//PB4
+        else B_IDR += '0';
+        if (PB0_bool) B_IDR += '1';//PB5
+        else B_IDR += '0';
+        B_IDR += '0';//PB6
+        if (PB0_bool) B_IDR += '1';//PB7
+        else B_IDR += '0';
+        Memory[0x48000410] = Convert.ToInt64(B_IDR,16);
 
     }
     bool LookAtInputTextBox = false;
