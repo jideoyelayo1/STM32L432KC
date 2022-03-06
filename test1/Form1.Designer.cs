@@ -426,35 +426,35 @@ partial class STM32
             this.panel1.Controls.Add(this.REG_txtBox0);
             this.panel1.Location = new System.Drawing.Point(27, 104);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(447, 140);
+            this.panel1.Size = new System.Drawing.Size(589, 140);
             this.panel1.TabIndex = 36;
             // 
             // REG_txtBox3
             // 
             this.REG_txtBox3.Location = new System.Drawing.Point(0, 107);
             this.REG_txtBox3.Name = "REG_txtBox3";
-            this.REG_txtBox3.Size = new System.Drawing.Size(447, 27);
+            this.REG_txtBox3.Size = new System.Drawing.Size(589, 27);
             this.REG_txtBox3.TabIndex = 38;
             // 
             // REG_txtBox2
             // 
             this.REG_txtBox2.Location = new System.Drawing.Point(0, 71);
             this.REG_txtBox2.Name = "REG_txtBox2";
-            this.REG_txtBox2.Size = new System.Drawing.Size(447, 27);
+            this.REG_txtBox2.Size = new System.Drawing.Size(589, 27);
             this.REG_txtBox2.TabIndex = 38;
             // 
             // REG_txtBox1
             // 
             this.REG_txtBox1.Location = new System.Drawing.Point(0, 37);
             this.REG_txtBox1.Name = "REG_txtBox1";
-            this.REG_txtBox1.Size = new System.Drawing.Size(444, 27);
+            this.REG_txtBox1.Size = new System.Drawing.Size(589, 27);
             this.REG_txtBox1.TabIndex = 38;
             // 
             // REG_txtBox0
             // 
             this.REG_txtBox0.Location = new System.Drawing.Point(0, 3);
             this.REG_txtBox0.Name = "REG_txtBox0";
-            this.REG_txtBox0.Size = new System.Drawing.Size(447, 27);
+            this.REG_txtBox0.Size = new System.Drawing.Size(589, 27);
             this.REG_txtBox0.TabIndex = 37;
             // 
             // Reset_Button
@@ -628,17 +628,17 @@ partial class STM32
         this.REG_txtBox0.Text += " R2: 0x" + Convert.ToString(REG[2], 16);
         this.REG_txtBox0.Text += " R3: 0x" + Convert.ToString(REG[3], 16);
         //txtBox1
-        this.REG_txtBox1.Text += "R4: 0x" + Convert.ToString(REG[4], 16);
+        this.REG_txtBox1.Text = "R4: 0x" + Convert.ToString(REG[4], 16);
         this.REG_txtBox1.Text += " R5: 0x" + Convert.ToString(REG[5], 16);
         this.REG_txtBox1.Text += " R6: 0x" + Convert.ToString(REG[6], 16);
         this.REG_txtBox1.Text += " R7: 0x" + Convert.ToString(REG[7], 16);
         //txtBox2
-        this.REG_txtBox2.Text += "R8: 0x" + Convert.ToString(REG[8], 16);
+        this.REG_txtBox2.Text = "R8: 0x" + Convert.ToString(REG[8], 16);
         this.REG_txtBox2.Text += " R9: 0x" + Convert.ToString(REG[9], 16);
         this.REG_txtBox2.Text += " R10: 0x" + Convert.ToString(REG[10], 16);
         this.REG_txtBox2.Text += " R11: 0x" + Convert.ToString(REG[11], 16);
         //txtBox3
-        this.REG_txtBox3.Text += "R12: 0x" + Convert.ToString(REG[12], 16);
+        this.REG_txtBox3.Text = "R12: 0x" + Convert.ToString(REG[12], 16);
         this.REG_txtBox3.Text += " R13: 0x" + Convert.ToString(REG[13], 16);
         this.REG_txtBox3.Text += " R14: 0x" + Convert.ToString(REG[14], 16);
         this.REG_txtBox3.Text += " R15: 0x" + Convert.ToString(REG[15], 16);
@@ -661,11 +661,13 @@ partial class STM32
         {
             PWM_Up = true;
             bmp.RotateFlip(RotateFlipType.Rotate90FlipNone);
+            this.PB6.BackColor = Color.Yellow;
         }
         else
         {
             PWM_Up = false;
             bmp.RotateFlip(RotateFlipType.Rotate270FlipNone);
+            this.PB6.BackColor = Color.Purple;
         }
         this.PWM.Image = bmp;
 
@@ -764,8 +766,6 @@ partial class STM32
     
 
 
-    private PictureBox pictureBox1;
-    private PictureBox pictureBox2;
     private PictureBox pictureBox3;
     private Button PA7;
     private Button PA6;

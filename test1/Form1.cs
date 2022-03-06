@@ -312,8 +312,8 @@ public partial class STM32 : Form
 
     public static long startingPC;
 
-    //                           0           1                    2  3  4  5  6  7  8  9 10 11 12 SP  LR  PC
-    public static long[] REG = { 0x20000060, 0x20000060, 0x20000060, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    //                           0 1           2           3           4  5           6  7  8  9 10       11     12         SP            LR         PC
+    public static long[] REG = { 0, 0x20000060, 0x4002104C, 0x20000260, 0, 0x20000000, 0, 0, 0, 0, 0x08000690, 0, 0x20000040, 0x2000064C, 0x080001FF, 0 };
 
     //public static Dictionary<long, long> MemoryMap = new Dictionary<long, long>();
     public static long[] Memory = new long[0x3FFFFFFF]; // Memory[addr,value] max array size is 0X7FEFFFFF
@@ -344,7 +344,11 @@ public partial class STM32 : Form
     {
         ODR_A_LEDs();
         UpdateButtons();
+        UpdatePWM();
+
+
         UpdateTimers();
+        
     }
 
     public static string ODR_output = "0000000000000000";
@@ -372,7 +376,8 @@ public partial class STM32 : Form
                 ODR = ODR[..^1];
                 MODER = MODER[..^2];
                 PUPDR = PUPDR[..^2];
-            }
+            } 
+
 
         ODR_output = ODR_out;
     }
@@ -1817,14 +1822,17 @@ public partial class STM32 : Form
     {
         TIM1_PSC = Memory[0x40012c28/4];
         TIM1_ARR = Memory[0x40012c2c/4];
-        TIM1_CNT = Memory[0x40012c24/4];
-        TIM1_CCR1 = Memory[0x40012c34/4];
+        TIM1_CNT = Memory[0x40012c24/4];        
         TIM1_CR1 = Memory[0x40012c00/4];
-        Run_TIM1();
+        Run_TIM1();        
+    }
+    private void UpdatePWM()
+    {
+        TIM1_CCR1 = Memory[0x40012c34 / 4];
         if (TIM1_CCR1 != Old_TIM1_CCR1)
         {
-            RotatePWM();
             Old_TIM1_CCR1 = TIM1_CCR1;
+            RotatePWM();            
 
         }
     }
@@ -1839,13 +1847,13 @@ public partial class STM32 : Form
             Begin_TIM1:
                 var freq = (int)(TIM1_PSC * TIM1_ARR * 4 / 16000);
                 TIM1_SR = 0;
-                Memory[0x40012c10 / 4] &= 0; //Update SR
+                UpdateMem(0, 0x40012c10); //Update SR
                 await Task.Delay((int)(TIM1_CNT - 0) * freq);
                 TIM1_SR = 1;
-                Memory[0x40012c10 / 4] |= 1;
+                UpdateMem(1, 0x40012c10);
                 await Task.Delay((int)(TIM1_ARR - TIM1_CNT) * freq);
                 TIM1_SR = 0;
-                Memory[0x40012c10 / 4] &= 0;
+                UpdateMem(1, 0x40012c10);
                 await Task.Delay((int)(TIM1_PSC - TIM1_ARR) * freq);
                 goto Begin_TIM1;
             }
@@ -2101,6 +2109,7 @@ public partial class STM32 : Form
     private long TIM2_BDTR;
     private long TIM2_CR1;
     private long TIM2_SR;
+
 
     private void Update_TIM2()
     {
