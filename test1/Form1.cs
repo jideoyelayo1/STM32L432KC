@@ -448,7 +448,7 @@ public partial class STM32 : Form
 
     #endregion
 
-    #region Timer
+    #region Timers
     //TIM2 TIM3 TIM15 TIM16 TIM1 TIM6 TIM7
     void UpdateTimers()
     {

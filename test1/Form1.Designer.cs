@@ -691,55 +691,55 @@ partial class STM32
     private  void UpdateGPIO_LEDs()//I made all the GPIOA pins LEDs
     {
         //PA0
-        if (ODR_output[^1] == '1') this.PA0.BackColor = Color.Green;
+        if (ODR_output[0] == '1') this.PA0.BackColor = Color.Green;
         else this.PA0.BackColor = Color.Gray;
 
         //PA1
-        if (ODR_output[^2] == '1') this.PA1.BackColor = Color.Green;
+        if (ODR_output[1] == '1') this.PA1.BackColor = Color.Green;
         else this.PA1.BackColor = Color.Gray;
 
         //PA2
-        if (ODR_output[^3] == '1') this.PA2.BackColor = Color.Green;
+        if (ODR_output[2] == '1') this.PA2.BackColor = Color.Green;
         else this.PA2.BackColor = Color.Gray;
 
         //PA3
-        if (ODR_output[^4] == '1') this.PA3.BackColor = Color.Green;
+        if (ODR_output[3] == '1') this.PA3.BackColor = Color.Green;
         else this.PA3.BackColor = Color.Gray;
 
         //PA4
-        if (ODR_output[^5] == '1') this.PA4.BackColor = Color.Green;
+        if (ODR_output[4] == '1') this.PA4.BackColor = Color.Green;
         else this.PA4.BackColor = Color.Gray;
 
         //PA5
-        if (ODR_output[^6] == '1') this.PA5.BackColor = Color.Green;
+        if (ODR_output[5] == '1') this.PA5.BackColor = Color.Green;
         else this.PA5.BackColor = Color.Gray;
 
         //PA6
-        if (ODR_output[^7] == '1') this.PA6.BackColor = Color.Green;
+        if (ODR_output[6] == '1') this.PA6.BackColor = Color.Green;
         else this.PA6.BackColor = Color.Gray;
 
         //PA7
-        if (ODR_output[^8] == '1') this.PA7.BackColor = Color.Green;
+        if (ODR_output[7] == '1') this.PA7.BackColor = Color.Green;
         else this.PA7.BackColor = Color.Gray;
 
         //PA8
-        if (ODR_output[^9] == '1') this.PA8.BackColor = Color.Green;
+        if (ODR_output[8] == '1') this.PA8.BackColor = Color.Green;
         else this.PA8.BackColor = Color.Gray;
 
         //PA9
-        if (ODR_output[^10] == '1') this.PA9.BackColor = Color.Green;
+        if (ODR_output[9] == '1') this.PA9.BackColor = Color.Green;
         else this.PA9.BackColor = Color.Gray;
 
         //PA10
-        if (ODR_output[^11] == '1') this.PA10.BackColor = Color.Green;
+        if (ODR_output[10] == '1') this.PA10.BackColor = Color.Green;
         else this.PA10.BackColor = Color.Gray;
 
         //PA11
-        if (ODR_output[^12] == '1') this.PA11.BackColor = Color.Green;
+        if (ODR_output[11] == '1') this.PA11.BackColor = Color.Green;
         else this.PA11.BackColor = Color.Gray;
 
         //PA12
-        if (ODR_output[^13] == '1') this.PA12.BackColor = Color.Green;
+        if (ODR_output[12] == '1') this.PA12.BackColor = Color.Green;
         else this.PA12.BackColor = Color.Gray;
 
 
