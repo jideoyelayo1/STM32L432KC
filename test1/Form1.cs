@@ -1,53 +1,242 @@
-using System.ComponentModel;
 using System.Text;
 
 namespace test1;
 
 public partial class STM32 : Form
 {
+    private static bool LookAtInputTextBox;
+    private static bool PB3_bool;
+    private static bool PB4_bool;
+    private static bool PB5_bool;
+    private static bool PB7_bool;
+    private static bool PB0_bool;
+    private static bool PB1_bool;
     public STM32()
     {
         InitializeComponent();
     }
 
+    private void Load_file_Click(object sender, EventArgs e)
+    {
+        var openFileDialog = new OpenFileDialog();
+        if (openFileDialog.ShowDialog() == DialogResult.OK)
+        {
+            LookAtInputTextBox = false;
+            fileToRun = openFileDialog.FileName;
+            Update_FileName_Textbox("File Loaded");
+        }
+    }
+
+    private void StartButton_Click(object sender, EventArgs e)
+    {
+        CleanUP();
+        if (fileToRun != null && !LookAtInputTextBox)
+        {
+            if (LookAtInputTextBox == false)
+                Run(fileToRun);
+            else Run(InputBox.Text);
+            Update_FileName_Textbox("Running");
+
+        }
+        else
+        {
+            Update_FileName_Textbox("No File Added");
+
+        }
+    }
+
+    private void Reset_Button_Click(object sender, EventArgs e)
+    {
+        Update_FileName_Textbox("Please Wait clearing Memory");
+        Pause_Bool = false;
+        if (REG[15] != 0)
+        {
+
+            CurrInstru = "";
+            NextInstru = "";
+            startingPC = 0;
+            ODR_output = "0000000000000000";
+            Update();
+            Update_Intr();
+            UpdatingOutputs();
+
+
+            for (var i = 0; i < REG.Length; i++)
+                if (i < 3) REG[i] = 0x20000060;
+                else REG[i] = 0;
+
+            //Array.Clear(Memory, 0, Memory.Length);
+
+            Update_FileName_Textbox("Reset Finished");
+        }
+    }
+
+
+    private void Step_button_Click(object sender, EventArgs e)
+    {
+        if (fileToRun != null && !LookAtInputTextBox)
+        {
+            if (LookAtInputTextBox == false)
+                Step(fileToRun);
+            else Step(InputBox.Text);
+            Update_FileName_Textbox("Running");
+
+        }
+        else
+        {
+            Update_FileName_Textbox("No File Added");
+
+        }
+    }
+
+    private void Restart_button_Click(object sender, EventArgs e)
+    {
+        Application.Restart();
+    }
+
+    private void Pause_Button_Click(object sender, EventArgs e)
+    {
+        if (Pause_Bool) // Pause is on
+            Pause_Bool = false;
+        else if (!Pause_Bool) // pause is off
+            Pause_Bool = true;
+
+    }
+
+    private void STM32_Load(object sender, EventArgs e)
+    {
+
+    }
+    private void Input_TextBox_Click(object sender, EventArgs e)
+    {
+        LookAtInputTextBox = true;
+        Run(InputBox.Text);
+    }
+    private void PB3_Click(object sender, EventArgs e)
+    {
+        if (!PB3_bool)
+        {
+            PB3_bool = true;
+            PB3.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB3_bool = false;
+            PB3.BackColor = Color.Red;
+        }
+    }
+    private void PB4_Click(object sender, EventArgs e)
+    {
+        if (!PB4_bool)
+        {
+            PB4_bool = true;
+            PB4.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB4_bool = false;
+            PB4.BackColor = Color.Red;
+        }
+    }
+    private void PB5_Click(object sender, EventArgs e)
+    {
+        if (!PB5_bool)
+        {
+            PB5_bool = true;
+            PB5.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB5_bool = false;
+            PB5.BackColor = Color.Red;
+        }
+    }
+    private void PB7_Click(object sender, EventArgs e)
+    {
+        if (!PB7_bool)
+        {
+            PB7_bool = true;
+            PB7.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB7_bool = false;
+            PB7.BackColor = Color.Red;
+        }
+    }
+    private void PB0_Click(object sender, EventArgs e)
+    {
+        if (!PB0_bool)
+        {
+            PB0_bool = true;
+            PB0.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB0_bool = false;
+            PB0.BackColor = Color.Red;
+        }
+    }
+    private void PB1_Click(object sender, EventArgs e)
+    {
+        if (!PB1_bool)
+        {
+            PB1_bool = true;
+            PB1.BackColor = Color.Blue;
+        }
+        else
+        {
+            PB1_bool = false;
+            PB1.BackColor = Color.Red;
+        }
+    }
+    public static void CleanUP()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+
+    }
+
     #region FrontEnd
-    public static string fileToRun;
-    public static int ClockSpeed = 1000; // milliseconds
+
+    public static string fileToRun ;
+    public static int ClockSpeed = 50; // milliseconds
 
     public static string CurrInstru = "";
     public static string NextInstru = "";
 
-    public static bool Pause_Bool = false;
+    public static bool Pause_Bool;
 
-    public  void Update_Intr()
+    public void Update_Intr()
     {
         //if(NextInstru != null )
-            Update_Next_Instr_textbox(NextInstru);
+        Update_Next_Instr_textbox(NextInstru);
         //if( CurrInstru != null )
-            Update_Current_Instr_textbox(CurrInstru);
+        Update_Current_Instr_textbox(CurrInstru);
     }
-
-
-
-
 
     #endregion
 
 
     #region BackEnd
-    async void Run(string fname)
+
+    public static string[] lines;
+    private async void Run(string fname)
     {
         REG[15] = startingPC;
-        string[] lines;
         long yLen;
-        if (LookAtInputTextBox) {
-            var a = this.InputBox.Text;
-             lines = a.Split("\n").ToArray();
-             yLen = lines.Length;
-                }else {
-             lines = Enumerable.ToArray(File.ReadLines(fname));
-             yLen = lines.Length;
+        if (LookAtInputTextBox)
+        {
+            var a = InputBox.Text;
+            lines = a.Split("\n").ToArray();
+            yLen = lines.Length;
         }
+        else
+        {
+            lines = File.ReadLines(fname).ToArray();
+            yLen = lines.Length;
+        }
+        SetUp(fname);
 
         while (REG[15] < yLen - startingPC)
         {
@@ -74,7 +263,8 @@ public partial class STM32 : Form
             Running(lines[REG[15]]);
             UpdatingOutputs();
             REG[15]++;
-            Update(); UpdateButtons();
+            Update();
+            UpdateButtons();
 
             // Update Instruction TextBoxes
             if (REG[15] < yLen) CurrInstru = lines[REG[15]];
@@ -87,14 +277,17 @@ public partial class STM32 : Form
             await Task.Delay(ClockSpeed);
         }
     }
-     async void Step(string fname)
+    private async void Step(string fname)
     {
         REG[15] = startingPC;
-        var lines = Enumerable.ToArray(File.ReadLines(fname));
+        lines = File.ReadLines(fname).ToArray();
+        SetUp(fname);
+        REG[15] = startingPC;
         var yLen = lines.Length;
-        if (lines.Length > startingPC && lines[startingPC] != String.Empty)
+        if (lines.Length > startingPC && lines[startingPC] != string.Empty)
         {
-            Update(); UpdateButtons();
+            Update();
+            UpdateButtons();
             REG[15] = startingPC;
 
             // Update Instruction TextBoxes
@@ -108,7 +301,8 @@ public partial class STM32 : Form
             UpdatingOutputs();
             REG[15]++;
             startingPC = REG[15];
-            Update(); UpdateButtons();
+            Update();
+            UpdateButtons();
             await Task.Delay(ClockSpeed);
         }
 
@@ -116,32 +310,51 @@ public partial class STM32 : Form
     }
 
 
-    public static long startingPC = 0;
+    public static long startingPC;
+
     //                           0           1                    2  3  4  5  6  7  8  9 10 11 12 SP  LR  PC
     public static long[] REG = { 0x20000060, 0x20000060, 0x20000060, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
     //public static Dictionary<long, long> MemoryMap = new Dictionary<long, long>();
-    public static long[] Memory = new long[0X7FEFFFFF]; // Memory[addr,value] max array size is 0X7FEFFFFF
+    public static long[] Memory = new long[0x3FFFFFFF]; // Memory[addr,value] max array size is 0X7FEFFFFF
+
+    public static void UpdateMem(long value, long addr)
+    {
+        if (addr < 0xffffffff && addr % 4 == 0)
+            Memory[addr/4] = value;
+        if (addr > 0xffffffff)
+            throw new InvalidOperationException("address larger than memory size");
+
+    }
+    public static long LoadMem(long addr)
+    {
+        if (addr < 0xffffffff && addr % 4 == 0)
+            return Memory[addr/4];
+        //throw new InvalidOperationException("Value to large to be stored in memory Address:" + Convert.ToString(addr,16));
+        // ^ should not exist
+        return 0;
+    }
     public static string bitTrim(string val, int len)
     {
-        for (int i = len - val.Length; i > 0; i--)
-        {
+        for (var i = len - val.Length; i > 0; i--)
             val = '0' + val;
-        }
         return val;
     }
-    public static void UpdatingOutputs()
+    public void UpdatingOutputs()
     {
         ODR_A_LEDs();
+        UpdateButtons();
     }
 
     public static string ODR_output = "0000000000000000";
-    public static void ODR_A_LEDs()
+    public static string IDR_input = "0000000000000000";
+    public void ODR_A_LEDs()
     {
         var ODR_out = "0000000000000000";
-        var AHB2ENR = Convert.ToString(Memory[0x4002104c], 2);
-        var MODER = Convert.ToString(Memory[0x48000000], 2);
-        var PUPDR = Convert.ToString(Memory[0x4800000c], 2);
-        var ODR = Convert.ToString(Memory[0x48000014], 2);
+        var AHB2ENR = Convert.ToString(Memory[0x4002104c/4], 2);
+        var MODER = Convert.ToString(Memory[0x48000000/4], 2);
+        var PUPDR = Convert.ToString(Memory[0x4800000c/4], 2);
+        var ODR = Convert.ToString(Memory[0x48000014/4], 2);
 
         AHB2ENR = bitTrim(AHB2ENR, 32);
         MODER = bitTrim(MODER, 32);
@@ -149,85 +362,97 @@ public partial class STM32 : Form
         ODR = bitTrim(ODR, 16);
 
         if (AHB2ENR[^1] == '1')
-        {
-            for (int i = 0; i < ODR_out.Length; i++)
+            for (var i = 0; i < ODR_out.Length; i++)
             {
                 if (ODR[^1] == '1' && MODER[^2..] == "01" && PUPDR[^2..] == "10")
-                {
                     ODR_out = ReplaceAtIndex(ODR_out, i, '1');
-                }
                 else
-                {
                     ODR_out = ReplaceAtIndex(ODR_out, i, '0');
-                }
                 ODR = ODR[..^1];
                 MODER = MODER[..^2];
                 PUPDR = PUPDR[..^2];
             }
-        }
 
         ODR_output = ODR_out;
     }
-    public static string ODR_A_Buttons()
+    public static string B_IDR_Output = "0";
+    private static void UpdateButtons()
     {
-        var ODR_out = "0000000000000000";
-        var AHB2ENR = Convert.ToString(Memory[0x4002104c], 2);
-        var MODER = Convert.ToString(Memory[0x48000000], 2);
-        var PUPDR = Convert.ToString(Memory[0x4800000c], 2);
-        var ODR = Convert.ToString(Memory[0x48000014], 2);
+
+
+        var B_IDR = "";
+        if (PB0_bool) B_IDR += '1'; //PB0
+        else B_IDR += '0';
+        if (PB1_bool) B_IDR += '1'; //PB1
+        else B_IDR += '0';
+        B_IDR += '0'; //PB2
+        if (PB3_bool) B_IDR += '1'; //PB3
+        else B_IDR += '0';
+        if (PB4_bool) B_IDR += '1'; //PB4
+        else B_IDR += '0';
+        if (PB5_bool) B_IDR += '1'; //PB5
+        else B_IDR += '0';
+        B_IDR += '0'; //PB6
+        if (PB7_bool) B_IDR += '1'; //PB7
+        else B_IDR += '0';
+        B_IDR_Output = B_IDR;
+        ODR_B_Buttons();
+
+    }
+    public static void ODR_B_Buttons()
+    {
+        var IDR_out = "0000000000000000";
+        var AHB2ENR = Convert.ToString(LoadMem(0x4002104c), 2);
+        var MODER = Convert.ToString(LoadMem(0x48000400), 2);
+        var PUPDR = Convert.ToString(LoadMem(0x4800040c), 2);
+        var IDR = Convert.ToString(LoadMem(0x48000410), 2);
 
         AHB2ENR = bitTrim(AHB2ENR, 32);
         MODER = bitTrim(MODER, 32);
         PUPDR = bitTrim(PUPDR, 32);
-        ODR = bitTrim(ODR, 16);
+        IDR = bitTrim(IDR, 16);
 
-        if (AHB2ENR[^1] == '1')
-        {
-            for (int i = 0; i < ODR_out.Length; i++)
+        if (AHB2ENR[^2] == '1')
+            for (var i = 0; i < IDR_out.Length; i++)
             {
-                if (ODR[^1] == '1' && MODER[^2..] == "10" && PUPDR[^2..] == "10")
-                {
-                    ODR_out = ReplaceAtIndex(ODR_out, i, '1');
-                }
+                if (IDR[^1] == '1' && MODER[^2..] == "00" && PUPDR[^2..] == "01")
+                    IDR_out = ReplaceAtIndex(IDR_out, i, '1');
                 else
-                {
-                    ODR_out = ReplaceAtIndex(ODR_out, i, '0');
-                }
-                ODR = ODR[..^1];
+                    IDR_out = ReplaceAtIndex(IDR_out, i, '0');
+                IDR = IDR[..^1];
                 MODER = MODER[..^2];
                 PUPDR = PUPDR[..^2];
             }
-        }
 
-        return ODR_out;
+
+        IDR_input = ReverseAString(IDR_out);
+        Memory[0x48000410/4] = Convert.ToInt64(IDR_input, 16) & Convert.ToInt64(ReverseAString(B_IDR_Output), 16);
+        B_IDR_Output = "";
+        IDR_input = "";
     }
-    public static void UpdateMem(long value, long addr)
+
+    public static string ReverseAString(string s)
     {
-        
-        Memory[addr] = value;
+        var charArray = s.ToCharArray();
+        Array.Reverse(charArray);
+        return new string(charArray);
     }
-
     public static long NOT(long num)
     {
-        string b = Convert.ToString(num, 2);
+        var b = Convert.ToString(num, 2);
         var bNum = b.Length;
         for (var i = 32 - bNum; i > 0; i--)
-        {
             b = "0" + b;
-        }
         for (var i = 0; i < b.Length; i++)
-        {
             switch (b[i])
             {
                 case '1':
-                    ReplaceAtIndex(b, i, '0');
+                    b = ReplaceAtIndex(b, i, '0');
                     break;
                 case '0':
-                    ReplaceAtIndex(b, i, '1');
+                    b = ReplaceAtIndex(b, i, '1');
                     break;
             }
-
-        }
         return Convert.ToInt64(b, 2);
 
     }
@@ -251,195 +476,1288 @@ public partial class STM32 : Form
             '7' => 7,
             '8' => 8,
             '9' => 9,
+            'p' => 13,
+            'r' => 14,
+            'c' => 15,
             _ => 0
         };
 
     }
-    static void Running(string line)
+
+    private static void Running(string line)
     {
         var temp = line;
 
         if (line.Contains("LDR")) //LDR
         {
-            if (line.Contains('['))
+
+            if (line.Contains("LDRB"))
             {
-                int IdxOfFirstReg = line.IndexOf('r');
-                var regNo1 = line[(IdxOfFirstReg + 1)];
-                temp = temp[(IdxOfFirstReg + 3)..];
-                int IdxOfSecondReg = temp.IndexOf('r');
-                var regNo2 = temp[(IdxOfSecondReg + 1)];
-                temp = temp[1..];
-                int lastBracketIdx = temp.IndexOf(']');
-                temp = temp[..lastBracketIdx];
-                int valStartsHere = temp.IndexOf('x');
-                temp = temp[(valStartsHere + 1)..];
+                /*int IndexOfS = temp.IndexOf('s');
+                var SIndex = temp[(IndexOfS + 1)];
+                int IndexOfR = temp.IndexOf('r');
+                var RIndex = temp[(IndexOfR + 1)];
+                int IndexOfVal = temp.IndexOf('x');
+                temp = temp[(IndexOfVal + 1)..];
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                if (temp.Contains(']'))
+                    temp = temp[..^2];
                 long val = Convert.ToInt64(temp, 16);
 
-                REG[charToInt(regNo1)] = Memory[charToInt(regNo2)];
-
-
-
+                if (RIndex > IndexOfS)
+                {
+                    REG[13] = LoadMem(charToInt(RIndex) + val);
+                }
+                else if (RIndex < IndexOfS)
+                {
+                    REG[charToInt(RIndex)] = LoadMem(REG[13] + val);
+                }*/
 
             }
+            else
+            {
+                if (line.Contains('['))
+                {
+
+                    if (line.Contains("sp") && !line.Contains('r'))
+                    {
+                        var IdxOfFirstReg = line.IndexOf('r');
+                        var regNo1 = line[IdxOfFirstReg + 1];
+                        temp = temp[(IdxOfFirstReg + 3)..];
+                        char regNo2;
+
+                        var IdxOfSecondReg = temp.IndexOf('s');
+                        regNo2 = temp[IdxOfSecondReg + 1];
+
+                        temp = temp[1..];
+                        var lastBracketIdx = temp.IndexOf(']');
+                        temp = temp[..lastBracketIdx];
+                        var valStartsHere = temp.IndexOf('x');
+                        temp = temp[(valStartsHere + 1)..];
+                        temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                        //Console.WriteLine(temp);
+                        var val = Convert.ToInt64(temp, 16);
+
+                        REG[13] = LoadMem(REG[charToInt(regNo2)] + val); //Stack Pointer
+                    }
+                    else if (line.Contains("sp") && line.Contains('r'))
+                    {
+                        var IdxOfFirstReg = line.IndexOf('r');
+                        var regNo1 = line[IdxOfFirstReg + 1];
+                        temp = temp[(IdxOfFirstReg + 3)..];
+                        char regNo2;
+
+                        var IndexOfS = temp.IndexOf('s');
+                        var SIndex = temp[IndexOfS + 1];
+                        var IndexOfR = temp.IndexOf('r');
+                        var RIndex = temp[IndexOfR + 1];
+                        var IndexOfVal = temp.IndexOf('x');
+                        temp = temp[(IndexOfVal + 1)..];
+                        temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                        if (temp.Contains(']'))
+                            temp = temp[..^2];
+                        var val = Convert.ToInt64(temp, 16);
+
+                        if (RIndex > IndexOfS)
+                            UpdateMem(REG[charToInt(RIndex)] + val, REG[13]);
+                        else if (RIndex < IndexOfS)
+                            REG[charToInt(RIndex)] = LoadMem(REG[13] + val);
+                    }
+                    else
+                    {
+                        var IdxOfFirstReg = line.IndexOf('r');
+                        var regNo1 = line[IdxOfFirstReg + 1];
+                        temp = temp[(IdxOfFirstReg + 3)..];
+                        char regNo2;
+                        var IdxOfSecondReg = temp.IndexOf('r');
+                        regNo2 = temp[IdxOfSecondReg + 1];
+                        temp = temp[1..];
+                        var lastBracketIdx = temp.IndexOf(']');
+                        temp = temp[..lastBracketIdx];
+                        var valStartsHere = temp.IndexOf('x');
+                        temp = temp[(valStartsHere + 1)..];
+                        temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                        var val = Convert.ToInt64(temp, 16);
+
+                        Console.WriteLine("error is {0}", Convert.ToString(REG[charToInt(regNo2)], 16));
+
+                        REG[charToInt(regNo1)] = LoadMem(REG[charToInt(regNo2)] + val);
+                    }
+
+
+                }
+            }
+
 
         }
-        else if (line.Contains("ORR"))//ORR
+        else if (line.Contains("ORR")) //ORR
         {
-            int IdxOfFirstReg = line.IndexOf('r');
-            var regNo1 = line[(IdxOfFirstReg + 1)];
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
             temp = temp[(IdxOfFirstReg + 3)..];
             //Console.WriteLine(temp);
 
-            int IdxOfSecondReg = temp.IndexOf('r');
-            var regNo2 = temp[(IdxOfSecondReg + 1)];
+            var IdxOfSecondReg = temp.IndexOf('r');
+            var regNo2 = temp[IdxOfSecondReg + 1];
             temp = temp[1..];
 
-            int valStartsHere = temp.IndexOf('x');
+            var valStartsHere = temp.IndexOf('x');
             temp = temp[(valStartsHere + 1)..];
 
             temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-            long val = Convert.ToInt64(temp, 16);
+            var val = Convert.ToInt64(temp, 16);
             //Console.WriteLine(REG[charToInt(regNo2)] | val);
+            Console.WriteLine("{0}|{1}", Convert.ToString(REG[charToInt(regNo2)], 16), Convert.ToString(val, 16));
 
             REG[charToInt(regNo1)] = REG[charToInt(regNo2)] | val;
 
         }
         else if (line.Contains("STR")) //STR
         {
-            if (line.Contains('['))
+            if (line.Contains("STRB"))
+            { /*
+                    int IndexOfS = temp.IndexOf('s');
+                    var SIndex = temp[(IndexOfS + 1)];
+                    int IndexOfR = temp.IndexOf('r');
+                    var RIndex = temp[(IndexOfR + 1)];
+                    int IndexOfVal = temp.IndexOf('x');
+                    temp = temp[(IndexOfVal + 1)..];
+                    temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                    if (temp.Contains(']'))
+                        temp = temp[..^2];
+                    long val = Convert.ToInt64(temp, 16);
+
+                    if (RIndex > IndexOfS)
+                    {
+                        UpdateMem(REG[13],REG[charToInt(RIndex)] + val);
+                    }
+                    else if (RIndex < IndexOfS)
+                    {
+                        UpdateMem(REG[charToInt(RIndex)],REG[13] + val);
+                    }*/
+                // In program nothing happens
+
+            }
+            else
             {
-                int IdxOfFirstReg = line.IndexOf('r');
-                var regNo1 = line[(IdxOfFirstReg + 1)];
-                temp = temp[(IdxOfFirstReg + 3)..];
-                int IdxOfSecondReg = temp.IndexOf('r');
-                var regNo2 = temp[(IdxOfSecondReg + 1)];
-                temp = temp[1..];
-                int lastBracketIdx = temp.IndexOf(']');
-                temp = temp[..lastBracketIdx];
-                int valStartsHere = temp.IndexOf('x');
-                temp = temp[(valStartsHere + 1)..];
-                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-                long val = Convert.ToInt64(temp, 16);
+                if (line.Contains('['))
+                {
 
-                //Console.WriteLine(REG[charToInt(regNo1)]);
-                UpdateMem(REG[charToInt(regNo1)], REG[charToInt(regNo2)]);
+                    if (line.Contains("sp") && !line.Contains('r'))
+                    {
+                        var IdxOfFirstReg = line.IndexOf('r');
+                        var regNo1 = line[IdxOfFirstReg + 1];
+                        temp = temp[(IdxOfFirstReg + 3)..];
+                        char regNo2;
+
+                        var IdxOfSecondReg = temp.IndexOf('s');
+                        regNo2 = temp[IdxOfSecondReg + 1];
+
+                        temp = temp[1..];
+                        var lastBracketIdx = temp.IndexOf(']');
+                        temp = temp[..lastBracketIdx];
+                        var valStartsHere = temp.IndexOf('x');
+                        temp = temp[(valStartsHere + 1)..];
+                        temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                        var val = Convert.ToInt64(temp, 16);
+
+                        UpdateMem(REG[13], REG[charToInt(regNo2)] + val); //Stack Pointer
+                    }
+                    else if (line.Contains("sp") && line.Contains('r'))
+                    {
+                        var IndexOfS = temp.IndexOf('s');
+                        var SIndex = temp[IndexOfS + 1];
+                        var IndexOfR = temp.IndexOf('r');
+                        var RIndex = temp[IndexOfR + 1];
+                        var IndexOfVal = temp.IndexOf('x');
+                        temp = temp[(IndexOfVal + 1)..];
+                        temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                        if (temp.Contains(']'))
+                            temp = temp[..^2];
+                        var val = Convert.ToInt64(temp, 16);
+
+                        if (RIndex > IndexOfS)
+                            UpdateMem(REG[13], REG[charToInt(RIndex)] + val);
+                        else if (RIndex < IndexOfS)
+                            UpdateMem(REG[charToInt(RIndex)], REG[13] + val);
 
 
+                    }
+                    else
+                    {
+                        var IdxOfFirstReg = line.IndexOf('r');
+                        var regNo1 = line[IdxOfFirstReg + 1];
+                        temp = temp[(IdxOfFirstReg + 3)..];
+                        char regNo2;
+                        var IdxOfSecondReg = temp.IndexOf('r');
+                        regNo2 = temp[IdxOfSecondReg + 1];
+                        temp = temp[1..];
+                        var lastBracketIdx = temp.IndexOf(']');
+                        temp = temp[..lastBracketIdx];
+                        var valStartsHere = temp.IndexOf('x');
+                        temp = temp[(valStartsHere + 1)..];
+                        temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                        var val = Convert.ToInt64(temp, 16);
 
+                        UpdateMem(REG[charToInt(regNo1)], REG[charToInt(regNo2)] + val);
+
+                    }
+                }
             }
 
         }
         else if (line.Contains("MOVS"))
         {
-            int IdxOfFirstReg = line.IndexOf('r');
-            var regNo1 = line[(IdxOfFirstReg + 1)];
-            temp = temp[(IdxOfFirstReg + 3)..];
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 1)..];
 
 
-
-            int valStartsHere = temp.IndexOf('x');
-            temp = temp[(valStartsHere + 1)..];
-            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-            for (int i = 4 - temp.Length; i > 0; i--)
+            if (line.Contains('x'))
             {
-                temp = '0' + temp;
-            }
-            long val = Convert.ToInt64(temp, 16);
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                for (var i = 4 - temp.Length; i > 0; i--)
+                    temp = '0' + temp;
 
-            var tempREG = Convert.ToString(REG[charToInt(regNo1)], 16);
-            for (int i = 8 - tempREG.Length; i > 0; i--)
-            {
-                tempREG = "0" + tempREG;
+                var val = Convert.ToInt64(temp, 16);
+
+                var tempREG = Convert.ToString(REG[charToInt(regNo1)], 16);
+                for (var i = 8 - tempREG.Length; i > 0; i--)
+                    tempREG = "0" + tempREG;
+
+                if (REG[charToInt(regNo1)] - val < 0)
+                    xPSR[0] = false;
+                else
+                    xPSR[0] = true;
+
+                REG[charToInt(regNo1)] = Convert.ToInt64(tempREG[^4..] + temp[..4], 16);
             }
-            //Console.WriteLine("--------{0}----------",tempREG[^4..] );
-            REG[charToInt(regNo1)] = Convert.ToInt64(tempREG[^4..] + temp, 16);
+            else if (temp.Contains('r'))
+            {
+                var valStartsHere = temp.IndexOf('r');
+                var regNo2 = temp[valStartsHere + 1];
+                temp = Convert.ToString(REG[charToInt(regNo2)], 16);
+                for (var i = 4 - temp.Length; i > 0; i--)
+                    temp = '0' + temp;
+
+                var val = Convert.ToInt64(temp, 16);
+
+                var tempREG = Convert.ToString(REG[charToInt(regNo1)], 16);
+                for (var i = 8 - tempREG.Length; i > 0; i--)
+                    tempREG = "0" + tempREG;
+                REG[charToInt(regNo1)] = Convert.ToInt64(tempREG[^4..] + temp, 16);
+            }
+
 
         }
         else if (line.Contains("MOVT"))
         {
-            int IdxOfFirstReg = line.IndexOf('r');
-            var regNo1 = line[(IdxOfFirstReg + 1)];
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
             temp = temp[(IdxOfFirstReg + 3)..];
 
 
-
-            int valStartsHere = temp.IndexOf('x');
+            var valStartsHere = temp.IndexOf('x');
             temp = temp[(valStartsHere + 1)..];
             temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-            long val = Convert.ToInt64(temp, 16);
+            var val = Convert.ToInt64(temp, 16);
 
             var tempREG = Convert.ToString(REG[charToInt(regNo1)], 16);
-            for (int i = 8 - tempREG.Length; i > 0; i--)
-            {
+            for (var i = 8 - tempREG.Length; i > 0; i--)
                 tempREG = "0" + tempREG;
-            }
-
+            if (REG[charToInt(regNo1)] - val < 0)
+                xPSR[0] = false;
+            else
+                xPSR[0] = true;
             REG[charToInt(regNo1)] = Convert.ToInt64(temp + tempREG[^4..], 16);
 
         }
         else if (line.Contains("BIC"))
         {
-            int IdxOfFirstReg = line.IndexOf('r');
-            var regNo1 = line[(IdxOfFirstReg + 1)];
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
             temp = temp[(IdxOfFirstReg + 3)..];
             //Console.WriteLine(temp);
 
-            int IdxOfSecondReg = temp.IndexOf('r');
-            var regNo2 = temp[(IdxOfSecondReg + 1)];
+            var IdxOfSecondReg = temp.IndexOf('r');
+            var regNo2 = temp[IdxOfSecondReg + 1];
             temp = temp[1..];
 
-            int valStartsHere = temp.IndexOf('x');
-            temp = temp[(valStartsHere + 1)..];
 
-            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-            long val = Convert.ToInt64(temp, 16);
+            if (temp.Contains('x'))
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] & NOT(val);
+            }
+            else if (temp.Contains('r'))
+            {
+                var IdxOfThirdReg = temp.IndexOf('r');
+                var regNo3 = temp[IdxOfThirdReg + 1];
+                temp = temp[1..];
 
-
-
-            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] | NOT(val);
+                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] & NOT(REG[charToInt(regNo3)]);
+            }
 
         }
         else if (line.Contains("MOVW"))
         {
-            int IdxOfFirstReg = line.IndexOf('r');
-            var regNo1 = line[(IdxOfFirstReg + 1)];
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
             temp = temp[(IdxOfFirstReg + 3)..];
 
-            int valStartsHere = temp.IndexOf('x');
+            var valStartsHere = temp.IndexOf('x');
             temp = temp[(valStartsHere + 1)..];
             temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-            long val = Convert.ToInt64(temp, 16);
+            var val = Convert.ToInt64(temp, 16);
 
-            for (int i = 4 - temp.Length; i > 0; i--)
-            {
+            for (var i = 4 - temp.Length; i > 0; i--)
                 temp = '0' + temp;
-            }
             var tempREG = Convert.ToString(REG[charToInt(regNo1)], 16);
 
-            for (int i = 8 - tempREG.Length; i > 0; i--)
-            {
+            for (var i = 8 - tempREG.Length; i > 0; i--)
                 tempREG = '0' + tempREG;
-            }
             REG[charToInt(regNo1)] = Convert.ToInt64(tempREG[..4] + temp, 16);
         }
         else if (line.Contains("MOV"))
         {
-            int IdxOfFirstReg = line.IndexOf('r');
-            var regNo1 = line[(IdxOfFirstReg + 1)];
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
             temp = temp[(IdxOfFirstReg + 3)..];
 
 
-
-            int valStartsHere = temp.IndexOf('x');
+            var valStartsHere = temp.IndexOf('x');
             temp = temp[(valStartsHere + 1)..];
             temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-            long val = Convert.ToInt64(temp, 16);
+            var val = Convert.ToInt64(temp, 16);
 
             REG[charToInt(regNo1)] = val;
-            Console.WriteLine("THIS MOV:{0}", Convert.ToString(val, 16));
 
         }
+        else if (line.Contains("AND"))
+        {
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 3)..];
+            //Console.WriteLine(temp);
+
+            var IdxOfSecondReg = temp.IndexOf('r');
+            var regNo2 = temp[IdxOfSecondReg + 1];
+            temp = temp[1..];
+
+            var valStartsHere = temp.IndexOf('x');
+            temp = temp[(valStartsHere + 1)..];
+
+            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+            var val = Convert.ToInt64(temp, 16);
+            //Console.WriteLine(REG[charToInt(regNo2)] | val);
+
+            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] & val;
+        }
+        else if (line.Contains("EOR"))
+        {
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 3)..];
+            //Console.WriteLine(temp);
+
+            var IdxOfSecondReg = temp.IndexOf('r');
+            var regNo2 = temp[IdxOfSecondReg + 1];
+            temp = temp[1..];
+
+            var valStartsHere = temp.IndexOf('x');
+            temp = temp[(valStartsHere + 1)..];
+
+            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+            var val = Convert.ToInt64(temp, 16);
+            //Console.WriteLine(REG[charToInt(regNo2)] | val);
+
+            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] ^ val;
+
+        }
+        else if (line.Contains("ORN"))
+        {
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 3)..];
+            //Console.WriteLine(temp);
+
+            var IdxOfSecondReg = temp.IndexOf('r');
+            var regNo2 = temp[IdxOfSecondReg + 1];
+            temp = temp[1..];
+
+            var valStartsHere = temp.IndexOf('x');
+            temp = temp[(valStartsHere + 1)..];
+
+            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+            var val = Convert.ToInt64(temp, 16);
+
+
+            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] | NOT(val);
+        }
+        else if (line.Contains("CMP"))
+        {
+            // N(negative) Z(zero) C(carry/borrow) V(overflow) Q(sticky saturation)
+            long CMPtemp = 0;
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 3)..];
+
+            if (line.Contains("0x"))
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                CMPtemp = REG[charToInt(regNo1)] - val;
+
+                if (Convert.ToString(val, 2).Length == Convert.ToString(REG[charToInt(regNo1)] + val, 2).Length)
+                    xPSR[2] = true;
+                else
+                    xPSR[2] = false;
+            }
+            else if (temp.Contains("r"))
+            {
+                var IdxOfSecondReg = temp.IndexOf('r');
+                var regNo2 = temp[IdxOfSecondReg + 1];
+
+                CMPtemp = REG[charToInt(regNo1)] - REG[charToInt(regNo2)];
+
+                if (Convert.ToString(REG[charToInt(regNo1)], 2).Length == Convert.ToString(REG[charToInt(regNo1)] + REG[charToInt(regNo2)], 2).Length)
+                    xPSR[2] = true;
+                else
+                    xPSR[2] = false;
+            }
+            // N(negative) Z(zero) C(carry/borrow) V(overflow) Q(sticky saturation)
+            if (CMPtemp < 0)
+                xPSR[1] = true;
+            else
+                xPSR[1] = false;
+            if (CMPtemp == 0)
+                xPSR[2] = true;
+            else
+                xPSR[2] = false;
+
+            // No overflow added (was not affected in test programs)
+
+        }
+        else if (line.Contains("LSL"))
+        {
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 3)..];
+            //Console.WriteLine(temp);
+
+            var IdxOfSecondReg = temp.IndexOf('r');
+            var regNo2 = temp[IdxOfSecondReg + 1];
+            temp = temp[1..];
+
+            var valStartsHere = temp.IndexOf('#');
+            temp = temp[(valStartsHere + 1)..];
+
+            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+            var val = Convert.ToInt32(temp, 10);
+            //Console.WriteLine(REG[charToInt(regNo2)] | val);
+            var REGbefore = REG[charToInt(regNo2)];
+            //Console.WriteLine("*****************************************************************************************************");
+            if (REG[charToInt(regNo2)] >> val > 0xFFFFFFFF)
+                throw new InvalidOperationException("REG value is over 0xFFFFFFFF");
+
+            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] << val;
+            if (line.Contains("LSLS"))
+            {
+                if (REGbefore - REG[charToInt(regNo1)] < 0) xPSR[1] = true;
+                else xPSR[1] = false;
+                if (REGbefore - REG[charToInt(regNo1)] == 0) xPSR[2] = true;
+                else xPSR[2] = false;
+                //Console.WriteLine("Carry:{0} ",xPSR[2]);
+                if (val != 0)
+                {
+                    if (Convert.ToString(REGbefore, 2)[^1] == '1') xPSR[2] = true;
+                    else xPSR[2] = false;
+                }
+                //Console.WriteLine("Carry:{0} ",xPSR[2]);
+
+
+            }
+
+        }
+        else if (line.Contains("LSR"))
+        {
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 3)..];
+            //Console.WriteLine(temp);
+
+            var IdxOfSecondReg = temp.IndexOf('r');
+            var regNo2 = temp[IdxOfSecondReg + 1];
+            temp = temp[1..];
+
+            var valStartsHere = temp.IndexOf('#');
+            temp = temp[(valStartsHere + 1)..];
+
+            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+            var val = Convert.ToInt32(temp, 10);
+            //Console.WriteLine(REG[charToInt(regNo2)] | val);
+            var REGbefore = REG[charToInt(regNo2)];
+
+            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] >> val;
+            if (line.Contains("LSRS"))
+            {
+                if (REGbefore - REG[charToInt(regNo1)] < 0) xPSR[1] = true;
+                else xPSR[1] = false;
+                if (REGbefore - REG[charToInt(regNo1)] == 0) xPSR[2] = true;
+                else xPSR[2] = false;
+
+            }
+
+        }
+        else if (line.Contains("CBNZ"))
+        {
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 3)..];
+            //Console.WriteLine(temp);
+
+            var valStartsHere = temp.IndexOf(',');
+            temp = temp[(valStartsHere + 1)..];
+
+            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+
+            if (REG[charToInt(regNo1)] != 0)
+                for (var i = 0; i < lines.Length; i++)
+                    if (lines.Contains(temp))
+                        REG[15] = i;
+
+        }
+        else if (line.Contains("CBZ"))
+        {
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 3)..];
+            //Console.WriteLine(temp);
+
+            var valStartsHere = temp.IndexOf(',');
+            temp = temp[(valStartsHere + 1)..];
+
+            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+
+            if (REG[charToInt(regNo1)] == 0)
+                for (var i = 0; i < lines.Length; i++)
+                    if (lines.Contains(temp))
+                        REG[15] = i;
+
+        }
+        else if (line.Contains("VMRS"))
+        {
+            if (line.Contains("FPSCR"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                var valStartsHere = temp.IndexOf(',');
+                if (IdxOfFirstReg < valStartsHere)
+                    REG[charToInt(regNo1)] = FPSCR;
+                else if (IdxOfFirstReg > valStartsHere)
+                    FPSCR = REG[charToInt(regNo1)];
+
+            }
+            else if (line.Contains("FPSID"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                var valStartsHere = temp.IndexOf(',');
+                if (IdxOfFirstReg < valStartsHere)
+                    REG[charToInt(regNo1)] = FPSID;
+                else if (IdxOfFirstReg > valStartsHere)
+                    FPSID = REG[charToInt(regNo1)];
+            }
+            else if (line.Contains("FPEXC"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                var valStartsHere = temp.IndexOf(',');
+                if (IdxOfFirstReg < valStartsHere)
+                    REG[charToInt(regNo1)] = FPEXC;
+                else if (IdxOfFirstReg > valStartsHere)
+                    FPEXC = REG[charToInt(regNo1)];
+            }
+        }
+        else if (line.Contains("VMSR"))
+        {
+            if (line.Contains("FPSCR"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                var valStartsHere = temp.IndexOf(',');
+                if (IdxOfFirstReg < valStartsHere)
+                    REG[charToInt(regNo1)] = FPSCR;
+                else if (IdxOfFirstReg > valStartsHere)
+                    FPSCR = REG[charToInt(regNo1)];
+
+            }
+            else if (line.Contains("FPSID"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                var valStartsHere = temp.IndexOf(',');
+                if (IdxOfFirstReg < valStartsHere)
+                    REG[charToInt(regNo1)] = FPSID;
+                else if (IdxOfFirstReg > valStartsHere)
+                    FPSID = REG[charToInt(regNo1)];
+            }
+            else if (line.Contains("FPEXC"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                var valStartsHere = temp.IndexOf(',');
+                if (IdxOfFirstReg < valStartsHere)
+                    REG[charToInt(regNo1)] = FPEXC;
+                else if (IdxOfFirstReg > valStartsHere)
+                    FPEXC = REG[charToInt(regNo1)];
+            }
+        }
+        else if (line.Contains("BPL")) //Branch if PLus
+        {
+            if (xPSR[0] == false && xPSR[1] == false)
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                //Console.WriteLine("-------------------------------------------------------------------------------------------------------");
+                //Console.WriteLine("*****************************************************************************************************");
+
+                if (PC_FromKeil[val - 2] != 0)
+                    //Console.WriteLine("Before PC:{0}",REG[15]);
+                    REG[15] = PC_FromKeil[val - 2];
+                //Console.WriteLine("Before PC:{0}",REG[15]);
+            }
+        }
+        else if (line.Contains("BMI")) //Branch if PLus
+        {
+            if (xPSR[0])
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                if (PC_FromKeil[val] != 0)
+                    //Console.WriteLine("before change: {0}",REG[15]);
+                    REG[15] = PC_FromKeil[val];
+                //Console.WriteLine("after change: {0}",REG[15]);
+            }
+        }
+        else if (line.Contains("BEQ")) //Branch if PLus 
+        {
+
+            if (xPSR[1])
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                if (PC_FromKeil[val] != 0)
+                    //Console.WriteLine("before change: {0}",REG[15]);
+                    REG[15] = PC_FromKeil[val];
+                //Console.WriteLine("after change: {0}",REG[15]);
+            }
+        }
+        else if (line.Contains("BNE")) //Branch if PLus 
+        {
+            if (xPSR[0] == false)
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                if (PC_FromKeil[val] != 0)
+                    //Console.WriteLine("before change: {0}",REG[15]);
+                    REG[15] = PC_FromKeil[val];
+                //Console.WriteLine("after change: {0}",REG[15]);
+                else if (PC_FromKeil[val - 2] != 0)
+                    //Console.WriteLine("before change: {0}",REG[15]);
+                    REG[15] = PC_FromKeil[val - 2];
+                //Console.WriteLine("after change: {0}",REG[15]);
+            }
+        }
+        else if (line.Contains("PUSH"))
+        {
+            //Optional
+
+        }
+        else if (line.Contains("SUB"))
+        {
+            if (line.Contains("0x"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                //Console.WriteLine(temp);
+
+                var IdxOfSecondReg = temp.IndexOf('r');
+                var regNo2 = temp[IdxOfSecondReg + 1];
+                temp = temp[1..];
+
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                //Console.WriteLine(REG[charToInt(regNo2)] | val);
+                if (line.Contains("SUBS"))
+                {
+                    if (val - REG[charToInt(regNo2)] < 0) xPSR[1] = true;
+                    else xPSR[1] = false;
+                    if (val - REG[charToInt(regNo2)] == 0) xPSR[2] = true;
+                    else xPSR[2] = false;
+                    if (Convert.ToString(val, 2).Length == Convert.ToString(val + REG[charToInt(regNo2)], 2).Length)
+                        xPSR[2] = true;
+                    else
+                        xPSR[2] = false;
+
+                }
+
+                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] - val;
+            }
+            else if (line.Contains("#"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                //Console.WriteLine(temp);
+
+                var IdxOfSecondReg = temp.IndexOf('r');
+                var regNo2 = temp[IdxOfSecondReg + 1];
+                temp = temp[1..];
+
+                var valStartsHere = temp.IndexOf('#');
+                temp = temp[(valStartsHere + 1)..];
+
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                long val;
+                if (temp.Contains('x'))
+                {
+                    temp = temp[2..];
+                    val = Convert.ToInt64(temp, 16);
+                }
+                else
+                {
+                    val = Convert.ToInt64(temp, 10);
+                }
+                //Console.WriteLine(REG[charToInt(regNo2)] | val);
+                {
+                    if (val - REG[charToInt(regNo2)] < 0) xPSR[1] = true;
+                    else xPSR[1] = false;
+                    if (val - REG[charToInt(regNo2)] == 0) xPSR[2] = true;
+                    else xPSR[2] = false;
+
+                }
+
+                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] - val;
+
+            }
+            else
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                //Console.WriteLine(temp);
+
+                var IdxOfSecondReg = temp.IndexOf('r');
+                var regNo2 = temp[IdxOfSecondReg + 1];
+                temp = temp[1..];
+
+                var valStartsHere = temp.IndexOf('r');
+                var regNo3 = temp[valStartsHere + 1];
+                {
+                    if (REG[charToInt(regNo3)] - REG[charToInt(regNo2)] < 0) xPSR[1] = true;
+                    else xPSR[1] = false;
+                    if (REG[charToInt(regNo3)] - REG[charToInt(regNo2)] == 0) xPSR[2] = true;
+                    else xPSR[2] = false;
+
+                }
+
+                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] - REG[charToInt(regNo3)];
+            }
+
+        }
+        else if (line.Contains("POP"))
+        {
+            //Optional
+        }
+        else if (line.Contains("DCW"))
+        {
+            //Optional
+
+        }
+        else if (line.Contains("DCD"))
+        {
+            //Optional
+        }
+        else if (line.Contains("ADD"))
+        {
+            if (line.Contains("0x"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                //Console.WriteLine(temp);
+
+                var IdxOfSecondReg = temp.IndexOf('r');
+                var regNo2 = temp[IdxOfSecondReg + 1];
+                temp = temp[1..];
+
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                //Console.WriteLine(REG[charToInt(regNo2)] | val);
+                if (line.Contains("ADDS"))
+                {
+                    if (val - REG[charToInt(regNo2)] > 0) xPSR[1] = true;
+                    else xPSR[1] = false;
+                    if (val - REG[charToInt(regNo2)] == 0) xPSR[2] = true;
+                    else xPSR[2] = false;
+                    if (Convert.ToString(val, 2).Length == Convert.ToString(val + REG[charToInt(regNo2)], 2).Length)
+                        xPSR[2] = true;
+                    else
+                        xPSR[2] = false;
+
+                }
+
+                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + val;
+            }
+            else if (line.Contains("#"))
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                //Console.WriteLine(temp);
+
+                var IdxOfSecondReg = temp.IndexOf('r');
+                var regNo2 = temp[IdxOfSecondReg + 1];
+                temp = temp[1..];
+
+                var valStartsHere = temp.IndexOf('#');
+                temp = temp[(valStartsHere + 1)..];
+
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                long val;
+                if (temp.Contains('x'))
+                {
+                    temp = temp[2..];
+                    val = Convert.ToInt64(temp, 16);
+                }
+                else
+                {
+                    val = Convert.ToInt64(temp, 10);
+                }
+                //Console.WriteLine(REG[charToInt(regNo2)] | val);
+                {
+                    if (val - REG[charToInt(regNo2)] > 0) xPSR[1] = true;
+                    else xPSR[1] = false;
+                    if (val - REG[charToInt(regNo2)] == 0) xPSR[2] = true;
+                    else xPSR[2] = false;
+
+                }
+
+                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + val;
+
+            }
+            else
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                var regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                //Console.WriteLine(temp);
+
+                var IdxOfSecondReg = temp.IndexOf('r');
+                var regNo2 = temp[IdxOfSecondReg + 1];
+                temp = temp[1..];
+
+                var valStartsHere = temp.IndexOf('r');
+                var regNo3 = temp[valStartsHere + 1];
+                {
+                    if (REG[charToInt(regNo3)] - REG[charToInt(regNo2)] > 0) xPSR[1] = true;
+                    else xPSR[1] = false;
+                    if (REG[charToInt(regNo3)] - REG[charToInt(regNo2)] == 0) xPSR[2] = true;
+                    else xPSR[2] = false;
+
+                }
+
+                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + REG[charToInt(regNo3)];
+
+            }
+
+
+        }
+        else if (line.Contains("BLT"))
+        {
+            if (xPSR[0] == false && xPSR[4] || xPSR[0] && xPSR[4] == false)
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                if (PC_FromKeil[val] != 0)
+                    //Console.WriteLine("before change: {0}",REG[15]);
+                    REG[15] = PC_FromKeil[val];
+                //Console.WriteLine("after change: {0}",REG[15]);
+            }
+        }
+        else if (line.Contains("BGT"))
+        {
+            if (xPSR[0] == false && xPSR[1] == false && xPSR[3] == false || xPSR[0] && xPSR[1] == false && xPSR[3])
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                if (PC_FromKeil[val] != 0)
+                    //Console.WriteLine("before change: {0}",REG[15]);
+                    REG[15] = PC_FromKeil[val];
+                //Console.WriteLine("after change: {0}",REG[15]);
+            }
+        }
+        else if (line.Contains("BLE"))
+        {
+            if (xPSR[1] || xPSR[0] == false && xPSR[3] || xPSR[0] && xPSR[3] == false)
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                if (PC_FromKeil[val] != 0)
+                    //Console.WriteLine("before change: {0}",REG[15]);
+                    REG[15] = PC_FromKeil[val];
+                //Console.WriteLine("after change: {0}",REG[15]);
+            }
+
+        }
+        else if (line.Contains("ASR"))
+        {
+            var IdxOfFirstReg = line.IndexOf('r');
+            var regNo1 = line[IdxOfFirstReg + 1];
+            temp = temp[(IdxOfFirstReg + 3)..];
+            //Console.WriteLine(temp);
+
+            var IdxOfSecondReg = temp.IndexOf('r');
+            var regNo2 = temp[IdxOfSecondReg + 1];
+            temp = temp[1..];
+
+            var valStartsHere = temp.IndexOf('#');
+            temp = temp[(valStartsHere + 1)..];
+
+            temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+            var val = Convert.ToInt32(temp, 10);
+            var REGbefore = REG[charToInt(regNo2)];
+            //Console.WriteLine("*****************************************************************************************************");
+
+            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] >> val;
+            if (line.Contains("ASRS"))
+            {
+                if (REGbefore - REG[charToInt(regNo1)] < 0) xPSR[1] = true;
+                else xPSR[1] = false;
+                if (REGbefore - REG[charToInt(regNo1)] == 0) xPSR[2] = true;
+                else xPSR[2] = false;
+                //Console.WriteLine("Carry:{0} ",xPSR[2]);
+                if (val != 0)
+                {
+                    if (Convert.ToString(REGbefore, 2)[^1] == '1') xPSR[2] = true;
+                    else xPSR[2] = false;
+                }
+                if (Convert.ToString(val, 2).Length == Convert.ToString(val + REG[charToInt(regNo2)], 2).Length)
+                    xPSR[2] = true;
+                else
+                    xPSR[2] = false;
+                //Console.WriteLine("Carry:{0} ",xPSR[2]);
+            }
+        }
+        else if (line.Contains("ADC"))
+        {
+            var regNo1 = '\0';
+            var regNo2 = '\0';
+
+            if (temp.Count(x => 'r' == x) == 2)
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+                regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                //Console.WriteLine(temp);
+
+                var IdxOfSecondReg = temp.IndexOf('r');
+                regNo2 = temp[IdxOfSecondReg + 1];
+
+            }
+            else if (temp.Count(x => 'r' == x) == 1)
+            {
+                var IdxOfFirstReg = line.IndexOf('r');
+
+                var IdxOfSecondReg = temp.IndexOf('s');
+
+                if (IdxOfSecondReg > IdxOfFirstReg)
+                {
+                    regNo1 = line[IdxOfFirstReg + 1];
+                    regNo2 = temp[IdxOfSecondReg + 1];
+                }
+                else if (IdxOfSecondReg < IdxOfFirstReg)
+                {
+                    regNo1 = line[IdxOfSecondReg + 1];
+                    regNo2 = temp[IdxOfFirstReg + 1];
+                }
+
+
+            }
+            else
+            {
+                var IdxOfFirstReg = line.IndexOf('s');
+                regNo1 = line[IdxOfFirstReg + 1];
+                temp = temp[(IdxOfFirstReg + 3)..];
+                //Console.WriteLine(temp);
+
+                var IdxOfSecondReg = temp.IndexOf('s');
+                regNo2 = temp[IdxOfSecondReg + 1];
+            }
+
+            if (line.Contains("0x"))
+            {
+
+
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                var val = Convert.ToInt64(temp, 16);
+                //Console.WriteLine(REG[charToInt(regNo2)] | val);
+
+
+                if (xPSR[2]) REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + val + 1;
+                else REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + val;
+
+            }
+            else if (line.Contains("#"))
+            {
+                var valStartsHere = temp.IndexOf('#');
+                temp = temp[(valStartsHere + 1)..];
+
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                long val = val = Convert.ToInt64(temp, 10);
+                //Console.WriteLine(REG[charToInt(regNo2)] | val);
+                if (line.Contains("ADCS"))
+                {
+                    if (val - REG[charToInt(regNo2)] > 0) xPSR[1] = true;
+                    else xPSR[1] = false;
+                    if (val - REG[charToInt(regNo2)] == 0) xPSR[2] = true;
+                    else xPSR[2] = false;
+                }
+
+                if (xPSR[2]) REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + val + 1;
+                else REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + val;
+
+
+            }
+            else
+            {
+
+                var valStartsHere = temp.IndexOf('r');
+                var regNo3 = temp[valStartsHere + 1];
+                {
+                    if (REG[charToInt(regNo3)] - REG[charToInt(regNo2)] > 0) xPSR[1] = true;
+                    else xPSR[1] = false;
+                    if (REG[charToInt(regNo3)] - REG[charToInt(regNo2)] == 0) xPSR[2] = true;
+                    else xPSR[2] = false;
+
+                }
+
+                if (xPSR[2]) REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + REG[charToInt(regNo3)] + 1;
+                else REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + REG[charToInt(regNo3)];
+
+
+            }
+        }
+        else if (line.Contains("IT"))
+        {
+            // Z
+            if (line.Contains("EQ")) xPSR[1] = true;
+            if (line.Contains("NE")) xPSR[1] = false;
+            // C
+            if (line.Contains("CS") || line.Contains("HS")) xPSR[2] = true;
+            if (line.Contains("CC") || line.Contains("LO")) xPSR[2] = false;
+            //N
+            if (line.Contains("MI")) xPSR[0] = true;
+            if (line.Contains("PL")) xPSR[0] = false;
+            // V
+            if (line.Contains("VS")) xPSR[3] = true;
+            if (line.Contains("VC")) xPSR[3] = false;
+            // C and V
+            if (line.Contains("HI"))
+            {
+                xPSR[1] = false;
+                xPSR[2] = true;
+            }
+            if (line.Contains("LS"))
+            {
+                xPSR[1] = true;
+                xPSR[2] = false;
+            }
+            // N and V
+            if (line.Contains("GE"))
+                xPSR[4] = xPSR[2];
+            if (line.Contains("LT"))
+                xPSR[4] = !xPSR[2];
+            // Z N V
+            if (line.Contains("GE"))
+            {
+                xPSR[1] = false;
+                xPSR[4] = xPSR[2];
+            }
+            if (line.Contains("LT"))
+            {
+                xPSR[1] = true;
+                xPSR[4] = !xPSR[2];
+            }
+
+
+        }
+        else if (line.Contains("CLZ"))
+        {
+
+            long c(long x)
+            {
+                return x < 0 ? 0 : c(x - ~x) + 1;
+            } //  recursive
+
+            var r1 = line.IndexOf('r');
+            var regNo1 = line[r1 + 1];
+            temp = temp[(r1 + 3)..];
+
+            var r2 = temp.IndexOf('r');
+            var regNo2 = temp[r2 + 1];
+
+            REG[charToInt(regNo1)] = c(REG[charToInt(regNo2)]);
+
+
+        }
+        else if (line.Contains("BX") || line.Contains('B') && !line.Contains("BPL"))
+        { //Need to fix branching
+
+
+            long val = 0;
+
+            if (line.Contains("BX"))
+            {
+                if (line.Contains("lr"))
+                {
+                    val = REG[^2];
+                    //Console.WriteLine("#####     {0}     #####",val);
+                }
+                else if (line.Contains('r'))
+                {
+                    var valStartsHere = temp.IndexOf('r');
+                    var regNo = temp[valStartsHere + 1];
+                    val = REG[charToInt(regNo)];
+                }
+            }
+            else if (line.Contains('B'))
+            {
+                var valStartsHere = temp.IndexOf('x');
+                temp = temp[(valStartsHere + 1)..];
+                temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+                val = Convert.ToInt64(temp, 16);
+
+                if (PC_FromKeil[val] != 0)
+                    //Console.WriteLine("before change: {0}",REG[15]);
+                    REG[15] = PC_FromKeil[val];
+                //Console.WriteLine("after change: {0}",REG[15]);
+            }
+
+            //Console.WriteLine("-----------------------------------Current PC:{0} Next PC:{1}-----------------------------------",Convert.ToString(val-0x08000346,16),Convert.ToString(PC_FromKeil[val],10));
+            //Console.WriteLine("-----------------------------------------------------------------------------------------------------------------------------");
+
+        }
+        // ".W"
+
+    }
+
+
+    public static bool[] xPSR = { false, true, true, false, false }; // N(negative) Z(zero) C(carry/borrow) V(overflow) Q(sticky saturation)
+    public static long FPSCR = 0x03000000, FPSID, FPEXC;
+    public static long[] PC_FromKeil = new long[0x9000000];
+    public static long KeilPC = 0x08000346;
+    private static void Cycles(string Instr_Line)
+    {
+        PC_FromKeil[KeilPC] = REG[15]; // Translating Keil PC to my PC
+        //Console.WriteLine("Cycle:{0} REG:{2} Line:{1} ",Convert.ToString(KeilPC,16),Instr_Line,REG[15]);
+
+        if (Instr_Line.Contains("JIDE")) KeilPC += 2;
+        // 4 letters
+        else if (Instr_Line.Contains("MOVS")) KeilPC += 2;
+        else if (Instr_Line.Contains("MOVT")) KeilPC += 4;
+        else if (Instr_Line.Contains("MOVW")) KeilPC += 4;
+        else if (Instr_Line.Contains("LSLS")) KeilPC += 2;
+        else if (Instr_Line.Contains("VMRS")) KeilPC += 4;
+        else if (Instr_Line.Contains("VMSR")) KeilPC += 4;
+        else if (Instr_Line.Contains("ADDS")) KeilPC += 2;
+        else if (Instr_Line.Contains("LSRS")) KeilPC += 2;
+        else if (Instr_Line.Contains("LDRB")) KeilPC += 4;
+        else if (Instr_Line.Contains("CBNZ")) KeilPC += 2;
+        else if (Instr_Line.Contains("BEQ.W")) KeilPC += 4;
+        else if (Instr_Line.Contains("STRB")) KeilPC += 4;
+        else if (Instr_Line.Contains("SUBS")) KeilPC += 2;
+        // 3 letters
+        else if (Instr_Line.Contains("CLZ")) KeilPC += 4;
+        else if (Instr_Line.Contains("CBZ")) KeilPC += 2;
+        else if (Instr_Line.Contains("BNE")) KeilPC += 2;
+        else if (Instr_Line.Contains("CMP")) KeilPC += 2;
+        else if (Instr_Line.Contains("DCW")) KeilPC += 2;
+        else if (Instr_Line.Contains("LDR")) KeilPC += 2;
+        else if (Instr_Line.Contains("ORR")) KeilPC += 4;
+        else if (Instr_Line.Contains("STR")) KeilPC += 2;
+        else if (Instr_Line.Contains("MOV")) KeilPC += 4;
+        else if (Instr_Line.Contains("AND")) KeilPC += 4;
+        else if (Instr_Line.Contains("BEQ")) KeilPC += 2;
+        else if (Instr_Line.Contains("BIC")) KeilPC += 4;
+        // 2 letters
+        else if (Instr_Line.Contains("BX")) KeilPC += 2;
+        else if (Instr_Line.Contains("IT")) KeilPC += 2;
+        // 1 letter
+        else if (Instr_Line.Contains('B')) KeilPC += 2;
+
+    }
+
+    private static void SetUp(string fname)
+    {
+
+        lines = File.ReadLines(fname).ToArray();
+        var yLen = lines.Length;
+        REG[15] = 0;
+
+        while (REG[15] < yLen)
+        {
+            Cycles(lines[REG[15]]); //Console.WriteLine(lines[REG[15]]);
+            REG[15]++;
+        }
+        REG[15] = 0;
+
+        #region MemorySetUp
+
+        // value, addr
+        for (var j = 0; j < 6; j++) // GPIOAs
+        for (var i = 0; i < 10; i++)
+            if (i != 6)
+                UpdateMem(0xABFFFFFF, 0x48000000 + 4 * i + j * 400);
+
+        #endregion
+
     }
 
     #endregion
@@ -449,8 +1767,9 @@ public partial class STM32 : Form
     #endregion
 
     #region Timers
+
     //TIM2 TIM3 TIM15 TIM16 TIM1 TIM6 TIM7
-    void UpdateTimers()
+    private void UpdateTimers()
     {
         Update_TIM1();
         Update_TIM6();
@@ -461,501 +1780,328 @@ public partial class STM32 : Form
         Update_TIM2();
 
     }
-    string LongToString32(long number)
+    private string LongToString32(long number)
     {
 
-        string b = Convert.ToString(number, 2);
+        var b = Convert.ToString(number, 2);
         var bNum = b.Length;
         for (var i = 32 - bNum; i > 0; i--)
-        {
             b = "0" + b;
-        }
         return b;
     }
+
     #region TIM1
 
     // PWM Timer 1
-    long TIM1_PSC;
-    long TIM1_ARR;
-    long TIM1_CNT;
-    long TIM1_CCMR1;
-    long TIM1_CCER;
-    long TIM1_CCR1; long Old_TIM1_CCR1;
-    long TIM1_BDTR;
-    long TIM1_CR1;
-    long TIM1_SR;
+    private long TIM1_PSC;
+    private long TIM1_ARR;
+    private long TIM1_CNT;
+    private long TIM1_CCMR1;
+    private long TIM1_CCER;
+    private long TIM1_CCR1;
+    private long Old_TIM1_CCR1;
+    private long TIM1_BDTR;
+    private long TIM1_CR1;
+    private long TIM1_SR;
 
-    void Update_TIM1()
+    private void Update_TIM1()
     {
-         TIM1_PSC = Memory[0x40012c28];
-         TIM1_ARR = Memory[0x40012c2c];
-         TIM1_CNT = Memory[0x40012c24];
-         TIM1_CCR1= Memory[0x40012c34];
-         TIM1_CR1 = Memory[0x40012c00];
-         Run_TIM1();
-        if( TIM1_CCR1 != Old_TIM1_CCR1 )
+        TIM1_PSC = Memory[0x40012c28/4];
+        TIM1_ARR = Memory[0x40012c2c/4];
+        TIM1_CNT = Memory[0x40012c24/4];
+        TIM1_CCR1 = Memory[0x40012c34/4];
+        TIM1_CR1 = Memory[0x40012c00/4];
+        Run_TIM1();
+        if (TIM1_CCR1 != Old_TIM1_CCR1)
         {
             RotatePWM(TIM1_CCR1);
             Old_TIM1_CCR1 = TIM1_CCR1;
 
         }
     }
-    async void Run_TIM1()
+    private async void Run_TIM1()
     {
-        
-        if (TIM1_PSC != 0 && TIM1_ARR != 0 && TIM1_CR1 != 0&& LongToString32(Memory[0x48000420])[4..8] == "0001") // Only for PB6
+
+        if (TIM1_PSC != 0 && TIM1_ARR != 0 && TIM1_CR1 != 0 && LongToString32(Memory[0x48000420/4])[4..8] == "0001") // Only for PB6
         {
             Begin_TIM1:
-            int freq = (int)( (TIM1_PSC * TIM1_ARR*4)/ 16000);
-            TIM1_SR = 0; Memory[0x40012c10] &= 0;//Update SR
-            await Task.Delay((int)(TIM1_CNT - 0) * (freq));
-            TIM1_SR = 1; Memory[0x40012c10] |= 1;
-            await Task.Delay((int)(TIM1_ARR-TIM1_CNT ) * (freq));
-            TIM1_SR = 0; Memory[0x40012c10] &= 0;
-            await Task.Delay((int)(TIM1_PSC-TIM1_ARR) * (freq));
+            var freq = (int)(TIM1_PSC * TIM1_ARR * 4 / 16000);
+            TIM1_SR = 0;
+            Memory[0x40012c10/4] &= 0; //Update SR
+            await Task.Delay((int)(TIM1_CNT - 0) * freq);
+            TIM1_SR = 1;
+            Memory[0x40012c10/4] |= 1;
+            await Task.Delay((int)(TIM1_ARR - TIM1_CNT) * freq);
+            TIM1_SR = 0;
+            Memory[0x40012c10/4] &= 0;
+            await Task.Delay((int)(TIM1_PSC - TIM1_ARR) * freq);
             goto Begin_TIM1;
         }
     }
 
     #endregion
+
     #region TIM7
 
     // PWM Timer 1
-    long TIM7_PSC;
-    long TIM7_ARR;
-    long TIM7_CNT;
-    long TIM7_CR1;
-    long TIM7_SR;
+    private long TIM7_PSC;
+    private long TIM7_ARR;
+    private long TIM7_CNT;
+    private long TIM7_CR1;
+    private long TIM7_SR;
 
-    void Update_TIM7()
+    private void Update_TIM7()
     {
-        TIM7_PSC = Memory[0x40001428];
-        TIM7_ARR = Memory[0x4000142c];
-        TIM7_CNT = Memory[0x40001424];
-        TIM7_CR1 = Memory[0x40001400];
+        TIM7_PSC = Memory[0x40001428/4];
+        TIM7_ARR = Memory[0x4000142c/4];
+        TIM7_CNT = Memory[0x40001424/4];
+        TIM7_CR1 = Memory[0x40001400/4];
         Run_TIM7();
     }
-    async void Run_TIM7()
+    private async void Run_TIM7()
     {
 
         if (TIM7_PSC != 0 && TIM7_ARR != 0 && TIM7_CR1 != 0)
         {
-        Begin_TIM7:
-            int freq = (int)((TIM7_PSC * TIM7_ARR * 4) / 16000);
-            TIM7_SR = 0; Memory[0x40014c10] &= 0;//Update SR
-            await Task.Delay((int)(TIM7_CNT - 0) * (freq));
-            TIM7_SR = 1; Memory[0x40014c10] |= 1;
-            await Task.Delay((int)(TIM7_ARR - TIM7_CNT) * (freq));
-            TIM7_SR = 0; Memory[0x40014c10] &= 0;
-            await Task.Delay((int)(TIM7_PSC - TIM7_ARR) * (freq));
+            Begin_TIM7:
+            var freq = (int)(TIM7_PSC * TIM7_ARR * 4 / 16000);
+            TIM7_SR = 0;
+            Memory[0x40014c10/4] &= 0; //Update SR
+            await Task.Delay((int)(TIM7_CNT - 0) * freq);
+            TIM7_SR = 1;
+            Memory[0x40014c10/4] |= 1;
+            await Task.Delay((int)(TIM7_ARR - TIM7_CNT) * freq);
+            TIM7_SR = 0;
+            Memory[0x40014c10/4] &= 0;
+            await Task.Delay((int)(TIM7_PSC - TIM7_ARR) * freq);
             goto Begin_TIM7;
         }
     }
 
-
-
     #endregion
+
     #region TIM6
 
     // PWM Timer 1
-    long TIM6_PSC;
-    long TIM6_ARR;
-    long TIM6_CNT;
-    long TIM6_CR1;
-    long TIM6_SR;
+    private long TIM6_PSC;
+    private long TIM6_ARR;
+    private long TIM6_CNT;
+    private long TIM6_CR1;
+    private long TIM6_SR;
 
-    void Update_TIM6()
+    private void Update_TIM6()
     {
-        TIM6_PSC = Memory[0x40001028];
-        TIM6_ARR = Memory[0x4000102c];
-        TIM6_CNT = Memory[0x40001024];
-        TIM6_CR1 = Memory[0x40001000];
+        TIM6_PSC = Memory[0x40001028/4];
+        TIM6_ARR = Memory[0x4000102c / 4];
+        TIM6_CNT = Memory[0x40001024 / 4];
+        TIM6_CR1 = Memory[0x40001000 / 4];
         Run_TIM6();
     }
-    async void Run_TIM6()
+    private async void Run_TIM6()
     {
 
         if (TIM6_PSC != 0 && TIM6_ARR != 0 && TIM6_CR1 != 0)
         {
-        Begin_TIM6:
-            int freq = (int)((TIM6_PSC * TIM6_ARR * 4) / 16000);
-            TIM6_SR = 0; Memory[0x40010c10] &= 0;//Update SR
-            await Task.Delay((int)(TIM6_CNT - 0) * (freq));
-            TIM6_SR = 1; Memory[0x40010c10] |= 1;
-            await Task.Delay((int)(TIM6_ARR - TIM6_CNT) * (freq));
-            TIM6_SR = 0; Memory[0x40010c10] &= 0;
-            await Task.Delay((int)(TIM6_PSC - TIM6_ARR) * (freq));
+            Begin_TIM6:
+            var freq = (int)(TIM6_PSC * TIM6_ARR * 4 / 16000);
+            TIM6_SR = 0;
+            Memory[0x40010c10 / 4] &= 0; //Update SR
+            await Task.Delay((int)(TIM6_CNT - 0) * freq);
+            TIM6_SR = 1;
+            Memory[0x40010c10 / 4] |= 1;
+            await Task.Delay((int)(TIM6_ARR - TIM6_CNT) * freq);
+            TIM6_SR = 0;
+            Memory[0x40010c10 / 4] &= 0;
+            await Task.Delay((int)(TIM6_PSC - TIM6_ARR) * freq);
             goto Begin_TIM6;
         }
     }
 
-
-
     #endregion
+
     #region TIM16
 
     // PWM Timer 1
-    long TIM16_PSC;
-    long TIM16_ARR;
-    long TIM16_CNT;
-    long TIM16_CCMR1;
-    long TIM16_CCER;
-    long TIM16_CCR1; long Old_TIM16_CCR1;
-    long TIM16_BDTR;
-    long TIM16_CR1;
-    long TIM16_SR;
+    private long TIM16_PSC;
+    private long TIM16_ARR;
+    private long TIM16_CNT;
+    private long TIM16_CCMR1;
+    private long TIM16_CCER;
+    private long TIM16_CCR1;
+    private long Old_TIM16_CCR1;
+    private long TIM16_BDTR;
+    private long TIM16_CR1;
+    private long TIM16_SR;
 
-    void Update_TIM16()
+    private void Update_TIM16()
     {
-        TIM16_PSC = Memory[0x40014428];
-        TIM16_ARR = Memory[0x4001442c];
-        TIM16_CNT = Memory[0x40014424];
-        TIM16_CCR1 = Memory[0x40014434];
-        TIM16_CR1 = Memory[0x40014400];
+        TIM16_PSC = Memory[0x40014428 / 4];
+        TIM16_ARR = Memory[0x4001442c / 4];
+        TIM16_CNT = Memory[0x40014424 / 4];
+        TIM16_CCR1 = Memory[0x40014434 / 4];
+        TIM16_CR1 = Memory[0x40014400 / 4];
         Run_TIM16();
 
     }
-    async void Run_TIM16()
+    private async void Run_TIM16()
     {
 
         if (TIM16_PSC != 0 && TIM16_ARR != 0 && TIM16_CR1 != 0)
         {
-        Begin_TIM16:
-            int freq = (int)((TIM16_PSC * TIM16_ARR * 4) / 16000);
-            TIM16_SR = 0; Memory[0x40014410] &= 0;//Update SR
-            await Task.Delay((int)(TIM16_CNT - 0) * (freq));
-            TIM16_SR = 1; Memory[0x40014410] |= 1;
-            await Task.Delay((int)(TIM16_ARR - TIM16_CNT) * (freq));
-            TIM16_SR = 0; Memory[0x40014410] &= 0;
-            await Task.Delay((int)(TIM16_PSC - TIM16_ARR) * (freq));
+            Begin_TIM16:
+            var freq = (int)(TIM16_PSC * TIM16_ARR * 4 / 16000);
+            TIM16_SR = 0;
+            Memory[0x40014410 / 4] &= 0; //Update SR
+            await Task.Delay((int)(TIM16_CNT - 0) * freq);
+            TIM16_SR = 1;
+            Memory[0x40014410 / 4] |= 1;
+            await Task.Delay((int)(TIM16_ARR - TIM16_CNT) * freq);
+            TIM16_SR = 0;
+            Memory[0x40014410 / 4] &= 0;
+            await Task.Delay((int)(TIM16_PSC - TIM16_ARR) * freq);
             goto Begin_TIM16;
         }
     }
+
     #endregion
+
     #region TIM15
 
     // PWM Timer 1
-    long TIM15_PSC;
-    long TIM15_ARR;
-    long TIM15_CNT;
-    long TIM15_CCMR1;
-    long TIM15_CCER;
-    long TIM15_CCR1; long Old_TIM15_CCR1;
-    long TIM15_BDTR;
-    long TIM15_CR1;
-    long TIM15_SR;
+    private long TIM15_PSC;
+    private long TIM15_ARR;
+    private long TIM15_CNT;
+    private long TIM15_CCMR1;
+    private long TIM15_CCER;
+    private long TIM15_CCR1;
+    private long Old_TIM15_CCR1;
+    private long TIM15_BDTR;
+    private long TIM15_CR1;
+    private long TIM15_SR;
 
-    void Update_TIM15()
+    private void Update_TIM15()
     {
-        TIM15_PSC = Memory[0x40014028];
-        TIM15_ARR = Memory[0x4001402c];
-        TIM15_CNT = Memory[0x40014024];
-        TIM15_CCR1 = Memory[0x40014034];
-        TIM15_CR1 = Memory[0x40014000];
+        TIM15_PSC = Memory[0x40014028 / 4];
+        TIM15_ARR = Memory[0x4001402c / 4];
+        TIM15_CNT = Memory[0x40014024 / 4];
+        TIM15_CCR1 = Memory[0x40014034 / 4];
+        TIM15_CR1 = Memory[0x40014000 / 4];
         Run_TIM15();
 
     }
-    async void Run_TIM15()
+    private async void Run_TIM15()
     {
 
         if (TIM15_PSC != 0 && TIM15_ARR != 0 && TIM15_CR1 != 0)
         {
-        Begin_TIM15:
-            int freq = (int)((TIM15_PSC * TIM15_ARR * 4) / 16000);
-            TIM15_SR = 0; Memory[0x40014010] &= 0;//Update SR
-            await Task.Delay((int)(TIM15_CNT - 0) * (freq));
-            TIM15_SR = 1; Memory[0x40014010] |= 1;
-            await Task.Delay((int)(TIM15_ARR - TIM15_CNT) * (freq));
-            TIM15_SR = 0; Memory[0x40014010] &= 0;
-            await Task.Delay((int)(TIM15_PSC - TIM15_ARR) * (freq));
+            Begin_TIM15:
+            var freq = (int)(TIM15_PSC * TIM15_ARR * 4 / 16000);
+            TIM15_SR = 0;
+            Memory[0x40014010 / 4] &= 0; //Update SR
+            await Task.Delay((int)(TIM15_CNT - 0) * freq);
+            TIM15_SR = 1;
+            Memory[0x40014010 / 4] |= 1;
+            await Task.Delay((int)(TIM15_ARR - TIM15_CNT) * freq);
+            TIM15_SR = 0;
+            Memory[0x40014010 / 4] &= 0;
+            await Task.Delay((int)(TIM15_PSC - TIM15_ARR) * freq);
             goto Begin_TIM15;
         }
     }
+
     #endregion
+
     #region TIM3
 
     // PWM Timer 1
-    long TIM3_PSC;
-    long TIM3_ARR;
-    long TIM3_CNT;
-    long TIM3_CCMR1;
-    long TIM3_CCER;
-    long TIM3_CCR1; long Old_TIM3_CCR1;
-    long TIM3_BDTR;
-    long TIM3_CR1;
-    long TIM3_SR;
+    private long TIM3_PSC;
+    private long TIM3_ARR;
+    private long TIM3_CNT;
+    private long TIM3_CCMR1;
+    private long TIM3_CCER;
+    private long TIM3_CCR1;
+    private long Old_TIM3_CCR1;
+    private long TIM3_BDTR;
+    private long TIM3_CR1;
+    private long TIM3_SR;
 
-    void Update_TIM3()
+    private void Update_TIM3()
     {
-        TIM3_PSC = Memory[0x40000428];
-        TIM3_ARR = Memory[0x4000042c];
-        TIM3_CNT = Memory[0x40000424];
-        TIM3_CCR1 = Memory[0x40000434];
-        TIM3_CR1 = Memory[0x40000400];
+        TIM3_PSC = Memory[0x40000428 / 4];
+        TIM3_ARR = Memory[0x4000042c / 4];
+        TIM3_CNT = Memory[0x40000424 / 4];
+        TIM3_CCR1 = Memory[0x40000434 / 4];
+        TIM3_CR1 = Memory[0x40000400 / 4];
         Run_TIM3();
 
     }
-    async void Run_TIM3()
+    private async void Run_TIM3()
     {
 
         if (TIM3_PSC != 0 && TIM3_ARR != 0 && TIM3_CR1 != 0)
         {
-        Begin_TIM3:
-            int freq = (int)((TIM3_PSC * TIM3_ARR * 4) / 16000);
-            TIM3_SR = 0; Memory[0x40000410] &= 0;//Update SR
-            await Task.Delay((int)(TIM3_CNT - 0) * (freq));
-            TIM3_SR = 1; Memory[0x40000410] |= 1;
-            await Task.Delay((int)(TIM3_ARR - TIM3_CNT) * (freq));
-            TIM3_SR = 0; Memory[0x40000410] &= 0;
-            await Task.Delay((int)(TIM3_PSC - TIM3_ARR) * (freq));
+            Begin_TIM3:
+            var freq = (int)(TIM3_PSC * TIM3_ARR * 4 / 16000);
+            TIM3_SR = 0;
+            Memory[0x40000410 / 4] &= 0; //Update SR
+            await Task.Delay((int)(TIM3_CNT - 0) * freq);
+            TIM3_SR = 1;
+            Memory[0x40000410 / 4] |= 1;
+            await Task.Delay((int)(TIM3_ARR - TIM3_CNT) * freq);
+            TIM3_SR = 0;
+            Memory[0x40000410 / 4] &= 0;
+            await Task.Delay((int)(TIM3_PSC - TIM3_ARR) * freq);
             goto Begin_TIM3;
         }
     }
+
     #endregion
+
     #region TIM2
 
     // PWM Timer 1
-    long TIM2_PSC;
-    long TIM2_ARR;
-    long TIM2_CNT;
-    long TIM2_CCMR1;
-    long TIM2_CCER;
-    long TIM2_CCR1; long Old_TIM2_CCR1;
-    long TIM2_BDTR;
-    long TIM2_CR1;
-    long TIM2_SR;
+    private long TIM2_PSC;
+    private long TIM2_ARR;
+    private long TIM2_CNT;
+    private long TIM2_CCMR1;
+    private long TIM2_CCER;
+    private long TIM2_CCR1;
+    private long Old_TIM2_CCR1;
+    private long TIM2_BDTR;
+    private long TIM2_CR1;
+    private long TIM2_SR;
 
-    void Update_TIM2()
+    private void Update_TIM2()
     {
-        TIM2_PSC = Memory[0x40000028];
-        TIM2_ARR = Memory[0x4000002c];
-        TIM2_CNT = Memory[0x40000024];
-        TIM2_CCR1 = Memory[0x40000034];
-        TIM2_CR1 = Memory[0x40000000];
+        TIM2_PSC = Memory[0x40000028 / 4];
+        TIM2_ARR = Memory[0x4000002c / 4];
+        TIM2_CNT = Memory[0x40000024 / 4];
+        TIM2_CCR1 = Memory[0x40000034 / 4];
+        TIM2_CR1 = Memory[0x40000000 / 4];
         Run_TIM2();
 
     }
-    async void Run_TIM2()
+    private async void Run_TIM2()
     {
 
         if (TIM2_PSC != 0 && TIM2_ARR != 0 && TIM2_CR1 != 0)
         {
-        Begin_TIM2:
-            int freq = (int)((TIM2_PSC * TIM2_ARR * 4) / 16000);
-            TIM2_SR = 0; Memory[0x40000010] &= 0;//Update SR
-            await Task.Delay((int)(TIM2_CNT - 0) * (freq));
-            TIM2_SR = 1; Memory[0x40000010] |= 1;
-            await Task.Delay((int)(TIM2_ARR - TIM2_CNT) * (freq));
-            TIM2_SR = 0; Memory[0x40000010] &= 0;
-            await Task.Delay((int)(TIM2_PSC - TIM2_ARR) * (freq));
+            Begin_TIM2:
+            var freq = (int)(TIM2_PSC * TIM2_ARR * 4 / 16000);
+            TIM2_SR = 0;
+            Memory[0x40000010 / 4] &= 0; //Update SR
+            await Task.Delay((int)(TIM2_CNT - 0) * freq);
+            TIM2_SR = 1;
+            Memory[0x40000010 / 4] |= 1;
+            await Task.Delay((int)(TIM2_ARR - TIM2_CNT) * freq);
+            TIM2_SR = 0;
+            Memory[0x40000010 / 4] &= 0;
+            await Task.Delay((int)(TIM2_PSC - TIM2_ARR) * freq);
             goto Begin_TIM2;
         }
     }
+
     #endregion
+
     #endregion
-
-
-
-    private void Load_file_Click(object sender, EventArgs e)
-    {
-        OpenFileDialog openFileDialog = new OpenFileDialog();
-        if (openFileDialog.ShowDialog() == DialogResult.OK)
-        {
-            LookAtInputTextBox = false;
-            fileToRun = openFileDialog.FileName;
-            Update_FileName_Textbox("File Loaded");
-        }
-    }
-
-    private  void StartButton_Click(object sender, EventArgs e)
-    {
-        if(fileToRun != null && !LookAtInputTextBox)
-        {
-            if (LookAtInputTextBox == false)
-                Run(fileToRun);
-            else Run(this.InputBox.Text);
-            Update_FileName_Textbox("Running");
-            
-        }
-        else { Update_FileName_Textbox("No File Added");
-            
-        }
-    }
-
-    private void Reset_Button_Click(object sender, EventArgs e)
-    {
-        Update_FileName_Textbox("Please Wait clearing Memory");
-        Pause_Bool = false;
-        if (REG[15] != 0)
-        {
-            
-            CurrInstru = "";
-            NextInstru = "";
-            startingPC = 0;
-            ODR_output = "0000000000000000";
-            Update(); Update_Intr(); UpdatingOutputs();
-
-
-            for (var i = 0; i < REG.Length; i++)
-            {
-                if (i < 3) REG[i] = 0x20000060;
-                else REG[i] = 0;
-            }
-
-            //Array.Clear(Memory, 0, Memory.Length);
-            
-            Update_FileName_Textbox("Reset Finished");
-        }
-    }
-
-
-    private void Step_button_Click(object sender, EventArgs e)
-    {
-        if (fileToRun != null && !LookAtInputTextBox)
-        {
-            if (LookAtInputTextBox == false)
-                Step(fileToRun);
-            else Step(this.InputBox.Text);
-            Update_FileName_Textbox("Running");
-
-        }
-        else
-        {
-            Update_FileName_Textbox("No File Added");
-
-        }
-    }
-
-    private void Restart_button_Click(object sender, EventArgs e)
-    {
-        System.Windows.Forms.Application.Restart();
-    }
-    
-    private void Pause_Button_Click(object sender, EventArgs e)
-    {
-        if (Pause_Bool) // Pause is on
-        {
-            Pause_Bool = false;
-        }
-        else if (!Pause_Bool) // pause is off
-        {
-            Pause_Bool = true;
-        }
-        
-    }
-
-    private void STM32_Load(object sender, EventArgs e)
-    {
-
-    }
-    private void UpdateButtons()
-    {
-        string B_IDR = "";
-        if (PB0_bool) B_IDR += '1';//PB0
-        else B_IDR += '0';
-        if (PB0_bool) B_IDR += '1';//PB1
-        else B_IDR += '0';
-        B_IDR += '0';//PB2
-        if (PB0_bool) B_IDR += '1';//PB3
-        else B_IDR += '0';
-        if (PB0_bool) B_IDR += '1';//PB4
-        else B_IDR += '0';
-        if (PB0_bool) B_IDR += '1';//PB5
-        else B_IDR += '0';
-        B_IDR += '0';//PB6
-        if (PB0_bool) B_IDR += '1';//PB7
-        else B_IDR += '0';
-        Memory[0x48000410] = Convert.ToInt64(B_IDR,16);
-
-    }
-    bool LookAtInputTextBox = false;
-    private void Input_TextBox_Click(object sender, EventArgs e)
-    {
-        LookAtInputTextBox = true;
-        Run(this.InputBox.Text);
-    }
-    bool PB3_bool = false;
-    private void PB3_Click(object sender, EventArgs e)
-    {
-        if (!PB3_bool)
-        {
-            PB3_bool = true;
-            this.PB3.BackColor = Color.Blue;
-        }
-        else
-        {
-            PB3_bool = false;
-            this.PB3.BackColor = Color.Red;
-        }
-    }
-    bool PB4_bool = false;
-    private void PB4_Click(object sender, EventArgs e)
-    {
-        if (!PB4_bool)
-        {
-            PB4_bool = true;
-            this.PB4.BackColor = Color.Blue;
-        }
-        else
-        {
-            PB4_bool = false;
-            this.PB4.BackColor = Color.Red;
-        }
-    }
-    bool PB5_bool = false;
-    private void PB5_Click(object sender, EventArgs e)
-    {
-        if (!PB5_bool)
-        {
-            PB5_bool = true;
-            this.PB5.BackColor = Color.Blue;
-        }
-        else
-        {
-            PB5_bool = false;
-            this.PB5.BackColor = Color.Red;
-        }
-    }
-    bool PB7_bool = false;
-    private void PB7_Click(object sender, EventArgs e)
-    {
-        if (!PB7_bool)
-        {
-            PB7_bool = true;
-            this.PB7.BackColor = Color.Blue;
-        }
-        else
-        {
-            PB7_bool = false;
-            this.PB7.BackColor = Color.Red;
-        }
-    }
-    bool PB0_bool = false;
-    private void PB0_Click(object sender, EventArgs e)
-    {
-        if (!PB0_bool)
-        {
-            PB0_bool = true;
-            this.PB0.BackColor = Color.Blue;
-        }
-        else
-        {
-            PB0_bool = false;
-            this.PB0.BackColor = Color.Red;
-        }
-    }
-    bool PB1_bool = false;
-    private void PB1_Click(object sender, EventArgs e)
-    {
-        if (!PB1_bool)
-        {
-            PB1_bool = true;
-            this.PB1.BackColor = Color.Blue;
-        }
-        else
-        {
-            PB1_bool = false;
-            this.PB1.BackColor = Color.Red;
-        }
-    }
 }
