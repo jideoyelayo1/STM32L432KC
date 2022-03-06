@@ -653,13 +653,20 @@ partial class STM32
         this.Current_Instr_textBox.Text = "Current Instruction: " + txt;
     }
 
-    private void RotatePWM(long CCR1)
+    bool PWM_Up = false;
+    private void RotatePWM()
     {
         Bitmap bmp = new Bitmap(this.PWM.Image);
-        if(CCR1 > 1)
-        bmp.RotateFlip(RotateFlipType.Rotate90FlipNone);
+        if (PWM_Up == false)
+        {
+            PWM_Up = true;
+            bmp.RotateFlip(RotateFlipType.Rotate90FlipNone);
+        }
         else
+        {
+            PWM_Up = false;
             bmp.RotateFlip(RotateFlipType.Rotate270FlipNone);
+        }
         this.PWM.Image = bmp;
 
     }

@@ -344,6 +344,7 @@ public partial class STM32 : Form
     {
         ODR_A_LEDs();
         UpdateButtons();
+        UpdateTimers();
     }
 
     public static string ODR_output = "0000000000000000";
@@ -1769,6 +1770,14 @@ public partial class STM32 : Form
     #region Timers
 
     //TIM2 TIM3 TIM15 TIM16 TIM1 TIM6 TIM7
+    static bool TIM1_IsOn = false;
+    static bool TIM2_IsOn = false;
+    static bool TIM3_IsOn = false;
+    static bool TIM6_IsOn = false;
+    static bool TIM7_IsOn = false;
+    static bool TIM15_IsOn = false;
+    static bool TIM16_IsOn = false;
+
     private void UpdateTimers()
     {
         Update_TIM1();
@@ -1814,28 +1823,32 @@ public partial class STM32 : Form
         Run_TIM1();
         if (TIM1_CCR1 != Old_TIM1_CCR1)
         {
-            RotatePWM(TIM1_CCR1);
+            RotatePWM();
             Old_TIM1_CCR1 = TIM1_CCR1;
 
         }
     }
     private async void Run_TIM1()
     {
-
-        if (TIM1_PSC != 0 && TIM1_ARR != 0 && TIM1_CR1 != 0 && LongToString32(Memory[0x48000420/4])[4..8] == "0001") // Only for PB6
+        if (!TIM1_IsOn)
         {
+
+            if (TIM1_PSC != 0 && TIM1_ARR != 0 && TIM1_CR1 != 0 && LongToString32(Memory[0x48000420 / 4])[4..8] == "0001") // Only for PB6
+            {
+                TIM1_IsOn = true;
             Begin_TIM1:
-            var freq = (int)(TIM1_PSC * TIM1_ARR * 4 / 16000);
-            TIM1_SR = 0;
-            Memory[0x40012c10/4] &= 0; //Update SR
-            await Task.Delay((int)(TIM1_CNT - 0) * freq);
-            TIM1_SR = 1;
-            Memory[0x40012c10/4] |= 1;
-            await Task.Delay((int)(TIM1_ARR - TIM1_CNT) * freq);
-            TIM1_SR = 0;
-            Memory[0x40012c10/4] &= 0;
-            await Task.Delay((int)(TIM1_PSC - TIM1_ARR) * freq);
-            goto Begin_TIM1;
+                var freq = (int)(TIM1_PSC * TIM1_ARR * 4 / 16000);
+                TIM1_SR = 0;
+                Memory[0x40012c10 / 4] &= 0; //Update SR
+                await Task.Delay((int)(TIM1_CNT - 0) * freq);
+                TIM1_SR = 1;
+                Memory[0x40012c10 / 4] |= 1;
+                await Task.Delay((int)(TIM1_ARR - TIM1_CNT) * freq);
+                TIM1_SR = 0;
+                Memory[0x40012c10 / 4] &= 0;
+                await Task.Delay((int)(TIM1_PSC - TIM1_ARR) * freq);
+                goto Begin_TIM1;
+            }
         }
     }
 
@@ -1860,21 +1873,24 @@ public partial class STM32 : Form
     }
     private async void Run_TIM7()
     {
-
-        if (TIM7_PSC != 0 && TIM7_ARR != 0 && TIM7_CR1 != 0)
+        if (!TIM7_IsOn)
         {
+            
+            if (TIM7_PSC != 0 && TIM7_ARR != 0 && TIM7_CR1 != 0)
+            {TIM7_IsOn = true;
             Begin_TIM7:
-            var freq = (int)(TIM7_PSC * TIM7_ARR * 4 / 16000);
-            TIM7_SR = 0;
-            Memory[0x40014c10/4] &= 0; //Update SR
-            await Task.Delay((int)(TIM7_CNT - 0) * freq);
-            TIM7_SR = 1;
-            Memory[0x40014c10/4] |= 1;
-            await Task.Delay((int)(TIM7_ARR - TIM7_CNT) * freq);
-            TIM7_SR = 0;
-            Memory[0x40014c10/4] &= 0;
-            await Task.Delay((int)(TIM7_PSC - TIM7_ARR) * freq);
-            goto Begin_TIM7;
+                var freq = (int)(TIM7_PSC * TIM7_ARR * 4 / 16000);
+                TIM7_SR = 0;
+                Memory[0x40014c10 / 4] &= 0; //Update SR
+                await Task.Delay((int)(TIM7_CNT - 0) * freq);
+                TIM7_SR = 1;
+                Memory[0x40014c10 / 4] |= 1;
+                await Task.Delay((int)(TIM7_ARR - TIM7_CNT) * freq);
+                TIM7_SR = 0;
+                Memory[0x40014c10 / 4] &= 0;
+                await Task.Delay((int)(TIM7_PSC - TIM7_ARR) * freq);
+                goto Begin_TIM7;
+            }
         }
     }
 
@@ -1899,21 +1915,24 @@ public partial class STM32 : Form
     }
     private async void Run_TIM6()
     {
-
-        if (TIM6_PSC != 0 && TIM6_ARR != 0 && TIM6_CR1 != 0)
+        if (!TIM6_IsOn)
         {
+            
+            if (TIM6_PSC != 0 && TIM6_ARR != 0 && TIM6_CR1 != 0)
+            {TIM6_IsOn = true;
             Begin_TIM6:
-            var freq = (int)(TIM6_PSC * TIM6_ARR * 4 / 16000);
-            TIM6_SR = 0;
-            Memory[0x40010c10 / 4] &= 0; //Update SR
-            await Task.Delay((int)(TIM6_CNT - 0) * freq);
-            TIM6_SR = 1;
-            Memory[0x40010c10 / 4] |= 1;
-            await Task.Delay((int)(TIM6_ARR - TIM6_CNT) * freq);
-            TIM6_SR = 0;
-            Memory[0x40010c10 / 4] &= 0;
-            await Task.Delay((int)(TIM6_PSC - TIM6_ARR) * freq);
-            goto Begin_TIM6;
+                var freq = (int)(TIM6_PSC * TIM6_ARR * 4 / 16000);
+                TIM6_SR = 0;
+                Memory[0x40010c10 / 4] &= 0; //Update SR
+                await Task.Delay((int)(TIM6_CNT - 0) * freq);
+                TIM6_SR = 1;
+                Memory[0x40010c10 / 4] |= 1;
+                await Task.Delay((int)(TIM6_ARR - TIM6_CNT) * freq);
+                TIM6_SR = 0;
+                Memory[0x40010c10 / 4] &= 0;
+                await Task.Delay((int)(TIM6_PSC - TIM6_ARR) * freq);
+                goto Begin_TIM6;
+            }
         }
     }
 
@@ -1921,7 +1940,7 @@ public partial class STM32 : Form
 
     #region TIM16
 
-    // PWM Timer 1
+    //  Timer 16
     private long TIM16_PSC;
     private long TIM16_ARR;
     private long TIM16_CNT;
@@ -1945,21 +1964,25 @@ public partial class STM32 : Form
     }
     private async void Run_TIM16()
     {
-
-        if (TIM16_PSC != 0 && TIM16_ARR != 0 && TIM16_CR1 != 0)
+        if (!TIM16_IsOn)
         {
+
+            if (TIM16_PSC != 0 && TIM16_ARR != 0 && TIM16_CR1 != 0)
+            {
+                TIM16_IsOn = true;
             Begin_TIM16:
-            var freq = (int)(TIM16_PSC * TIM16_ARR * 4 / 16000);
-            TIM16_SR = 0;
-            Memory[0x40014410 / 4] &= 0; //Update SR
-            await Task.Delay((int)(TIM16_CNT - 0) * freq);
-            TIM16_SR = 1;
-            Memory[0x40014410 / 4] |= 1;
-            await Task.Delay((int)(TIM16_ARR - TIM16_CNT) * freq);
-            TIM16_SR = 0;
-            Memory[0x40014410 / 4] &= 0;
-            await Task.Delay((int)(TIM16_PSC - TIM16_ARR) * freq);
-            goto Begin_TIM16;
+                var freq = (int)(TIM16_PSC * TIM16_ARR * 4 / 16000);
+                TIM16_SR = 0;
+                Memory[0x40014410 / 4] &= 0; //Update SR
+                await Task.Delay((int)(TIM16_CNT - 0) * freq);
+                TIM16_SR = 1;
+                Memory[0x40014410 / 4] |= 1;
+                await Task.Delay((int)(TIM16_ARR - TIM16_CNT) * freq);
+                TIM16_SR = 0;
+                Memory[0x40014410 / 4] &= 0;
+                await Task.Delay((int)(TIM16_PSC - TIM16_ARR) * freq);
+                goto Begin_TIM16;
+            }
         }
     }
 
@@ -1967,7 +1990,7 @@ public partial class STM32 : Form
 
     #region TIM15
 
-    // PWM Timer 1
+    //  Timer 15
     private long TIM15_PSC;
     private long TIM15_ARR;
     private long TIM15_CNT;
@@ -1991,21 +2014,25 @@ public partial class STM32 : Form
     }
     private async void Run_TIM15()
     {
-
-        if (TIM15_PSC != 0 && TIM15_ARR != 0 && TIM15_CR1 != 0)
+        if (!TIM15_IsOn)
         {
+
+            if (TIM15_PSC != 0 && TIM15_ARR != 0 && TIM15_CR1 != 0)
+            {
+                TIM15_IsOn = true;
             Begin_TIM15:
-            var freq = (int)(TIM15_PSC * TIM15_ARR * 4 / 16000);
-            TIM15_SR = 0;
-            Memory[0x40014010 / 4] &= 0; //Update SR
-            await Task.Delay((int)(TIM15_CNT - 0) * freq);
-            TIM15_SR = 1;
-            Memory[0x40014010 / 4] |= 1;
-            await Task.Delay((int)(TIM15_ARR - TIM15_CNT) * freq);
-            TIM15_SR = 0;
-            Memory[0x40014010 / 4] &= 0;
-            await Task.Delay((int)(TIM15_PSC - TIM15_ARR) * freq);
-            goto Begin_TIM15;
+                var freq = (int)(TIM15_PSC * TIM15_ARR * 4 / 16000);
+                TIM15_SR = 0;
+                Memory[0x40014010 / 4] &= 0; //Update SR
+                await Task.Delay((int)(TIM15_CNT - 0) * freq);
+                TIM15_SR = 1;
+                Memory[0x40014010 / 4] |= 1;
+                await Task.Delay((int)(TIM15_ARR - TIM15_CNT) * freq);
+                TIM15_SR = 0;
+                Memory[0x40014010 / 4] &= 0;
+                await Task.Delay((int)(TIM15_PSC - TIM15_ARR) * freq);
+                goto Begin_TIM15;
+            }
         }
     }
 
@@ -2013,7 +2040,7 @@ public partial class STM32 : Form
 
     #region TIM3
 
-    // PWM Timer 1
+    //  Timer 3
     private long TIM3_PSC;
     private long TIM3_ARR;
     private long TIM3_CNT;
@@ -2037,21 +2064,25 @@ public partial class STM32 : Form
     }
     private async void Run_TIM3()
     {
-
-        if (TIM3_PSC != 0 && TIM3_ARR != 0 && TIM3_CR1 != 0)
+        if (!TIM3_IsOn)
         {
+
+            if (TIM3_PSC != 0 && TIM3_ARR != 0 && TIM3_CR1 != 0)
+            {
+                TIM3_IsOn = true;
             Begin_TIM3:
-            var freq = (int)(TIM3_PSC * TIM3_ARR * 4 / 16000);
-            TIM3_SR = 0;
-            Memory[0x40000410 / 4] &= 0; //Update SR
-            await Task.Delay((int)(TIM3_CNT - 0) * freq);
-            TIM3_SR = 1;
-            Memory[0x40000410 / 4] |= 1;
-            await Task.Delay((int)(TIM3_ARR - TIM3_CNT) * freq);
-            TIM3_SR = 0;
-            Memory[0x40000410 / 4] &= 0;
-            await Task.Delay((int)(TIM3_PSC - TIM3_ARR) * freq);
-            goto Begin_TIM3;
+                var freq = (int)(TIM3_PSC * TIM3_ARR * 4 / 16000);
+                TIM3_SR = 0;
+                Memory[0x40000410 / 4] &= 0; //Update SR
+                await Task.Delay((int)(TIM3_CNT - 0) * freq);
+                TIM3_SR = 1;
+                Memory[0x40000410 / 4] |= 1;
+                await Task.Delay((int)(TIM3_ARR - TIM3_CNT) * freq);
+                TIM3_SR = 0;
+                Memory[0x40000410 / 4] &= 0;
+                await Task.Delay((int)(TIM3_PSC - TIM3_ARR) * freq);
+                goto Begin_TIM3;
+            }
         }
     }
 
@@ -2059,7 +2090,7 @@ public partial class STM32 : Form
 
     #region TIM2
 
-    // PWM Timer 1
+    //  Timer 2
     private long TIM2_PSC;
     private long TIM2_ARR;
     private long TIM2_CNT;
@@ -2083,21 +2114,25 @@ public partial class STM32 : Form
     }
     private async void Run_TIM2()
     {
-
-        if (TIM2_PSC != 0 && TIM2_ARR != 0 && TIM2_CR1 != 0)
+        if (!TIM2_IsOn)
         {
+
+            if (TIM2_PSC != 0 && TIM2_ARR != 0 && TIM2_CR1 != 0)
+            {
+                TIM2_IsOn = true;
             Begin_TIM2:
-            var freq = (int)(TIM2_PSC * TIM2_ARR * 4 / 16000);
-            TIM2_SR = 0;
-            Memory[0x40000010 / 4] &= 0; //Update SR
-            await Task.Delay((int)(TIM2_CNT - 0) * freq);
-            TIM2_SR = 1;
-            Memory[0x40000010 / 4] |= 1;
-            await Task.Delay((int)(TIM2_ARR - TIM2_CNT) * freq);
-            TIM2_SR = 0;
-            Memory[0x40000010 / 4] &= 0;
-            await Task.Delay((int)(TIM2_PSC - TIM2_ARR) * freq);
-            goto Begin_TIM2;
+                var freq = (int)(TIM2_PSC * TIM2_ARR * 4 / 16000);
+                TIM2_SR = 0;
+                Memory[0x40000010 / 4] &= 0; //Update SR
+                await Task.Delay((int)(TIM2_CNT - 0) * freq);
+                TIM2_SR = 1;
+                Memory[0x40000010 / 4] |= 1;
+                await Task.Delay((int)(TIM2_ARR - TIM2_CNT) * freq);
+                TIM2_SR = 0;
+                Memory[0x40000010 / 4] &= 0;
+                await Task.Delay((int)(TIM2_PSC - TIM2_ARR) * freq);
+                goto Begin_TIM2;
+            }
         }
     }
 
