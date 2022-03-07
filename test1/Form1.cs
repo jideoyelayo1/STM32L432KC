@@ -29,7 +29,6 @@ public partial class STM32 : Form
 
     private void StartButton_Click(object sender, EventArgs e)
     {
-        CleanUP();
         if (fileToRun != null && !LookAtInputTextBox)
         {
             if (LookAtInputTextBox == false)
@@ -224,7 +223,7 @@ public partial class STM32 : Form
     private async void Run(string fname)
     {
         REG[15] = startingPC;
-        long yLen;
+        int yLen;
         if (LookAtInputTextBox)
         {
             var a = InputBox.Text;
@@ -310,23 +309,23 @@ public partial class STM32 : Form
     }
 
 
-    public static long startingPC;
+    public static uint startingPC;
 
     //                           0 1           2           3           4  5           6  7  8  9 10       11     12         SP            LR         PC
-    public static long[] REG = { 0, 0x20000060, 0x4002104C, 0x20000260, 0, 0x20000000, 0, 0, 0, 0, 0x08000690, 0, 0x20000040, 0x2000064C, 0x080001FF, 0 };
+    public static uint[] REG = { 0, 0x20000060, 0x4002104C, 0x20000260, 0, 0x20000000, 0, 0, 0, 0, 0x08000690, 0, 0x20000040, 0x2000064C, 0x080001FF, 0 };
 
-    //public static Dictionary<long, long> MemoryMap = new Dictionary<long, long>();
-    public static long[] Memory = new long[0x3FFFFFFF]; // Memory[addr,value] max array size is 0X7FEFFFFF
+    //public static Dictionary<uint, uint> MemoryMap = new Dictionary<uint, uint>();
+    public static uint[] Memory = new uint[0x3FFFFFFF]; // Memory[addr,value] max array size is 0X7FEFFFFF
 
     public static void UpdateMem(long value, long addr)
     {
         if (addr < 0xffffffff && addr % 4 == 0)
-            Memory[addr/4] = value;
+            Memory[addr/4] = (uint)value;
         if (addr > 0xffffffff)
             throw new InvalidOperationException("address larger than memory size");
 
     }
-    public static long LoadMem(long addr)
+    public static uint LoadMem(long addr)
     {
         if (addr < 0xffffffff && addr % 4 == 0)
             return Memory[addr/4];
@@ -432,7 +431,7 @@ public partial class STM32 : Form
 
 
         IDR_input = ReverseAString(IDR_out);
-        Memory[0x48000410/4] = Convert.ToInt64(IDR_input, 16) & Convert.ToInt64(ReverseAString(B_IDR_Output), 16);
+        Memory[0x48000410/4] = (uint)(Convert.ToInt64(IDR_input, 16) & Convert.ToInt64(ReverseAString(B_IDR_Output), 16));
         B_IDR_Output = "";
         IDR_input = "";
     }
@@ -443,7 +442,7 @@ public partial class STM32 : Form
         Array.Reverse(charArray);
         return new string(charArray);
     }
-    public static long NOT(long num)
+    public static uint NOT(uint num)
     {
         var b = Convert.ToString(num, 2);
         var bNum = b.Length;
@@ -459,7 +458,7 @@ public partial class STM32 : Form
                     b = ReplaceAtIndex(b, i, '1');
                     break;
             }
-        return Convert.ToInt64(b, 2);
+        return (uint)Convert.ToInt64(b, 2);
 
     }
     public static string ReplaceAtIndex(string text, int index, char c)
@@ -508,7 +507,7 @@ public partial class STM32 : Form
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
                 if (temp.Contains(']'))
                     temp = temp[..^2];
-                long val = Convert.ToInt64(temp, 16);
+                uint val = Convert.ToInt64(temp, 16);
 
                 if (RIndex > IndexOfS)
                 {
@@ -615,7 +614,7 @@ public partial class STM32 : Form
             //Console.WriteLine(REG[charToInt(regNo2)] | val);
             Console.WriteLine("{0}|{1}", Convert.ToString(REG[charToInt(regNo2)], 16), Convert.ToString(val, 16));
 
-            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] | val;
+            REG[charToInt(regNo1)] = (uint)(REG[charToInt(regNo2)] | val);
 
         }
         else if (line.Contains("STR")) //STR
@@ -631,7 +630,7 @@ public partial class STM32 : Form
                     temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
                     if (temp.Contains(']'))
                         temp = temp[..^2];
-                    long val = Convert.ToInt64(temp, 16);
+                    uint val = Convert.ToInt64(temp, 16);
 
                     if (RIndex > IndexOfS)
                     {
@@ -738,7 +737,7 @@ public partial class STM32 : Form
                 else
                     xPSR[0] = true;
 
-                REG[charToInt(regNo1)] = Convert.ToInt64(tempREG[^4..] + temp[..4], 16);
+                REG[charToInt(regNo1)] = (uint)Convert.ToInt64(tempREG[^4..] + temp[..4], 16);
             }
             else if (temp.Contains('r'))
             {
@@ -753,7 +752,7 @@ public partial class STM32 : Form
                 var tempREG = Convert.ToString(REG[charToInt(regNo1)], 16);
                 for (var i = 8 - tempREG.Length; i > 0; i--)
                     tempREG = "0" + tempREG;
-                REG[charToInt(regNo1)] = Convert.ToInt64(tempREG[^4..] + temp, 16);
+                REG[charToInt(regNo1)] = (uint)Convert.ToInt64(tempREG[^4..] + temp, 16);
             }
 
 
@@ -777,7 +776,7 @@ public partial class STM32 : Form
                 xPSR[0] = false;
             else
                 xPSR[0] = true;
-            REG[charToInt(regNo1)] = Convert.ToInt64(temp + tempREG[^4..], 16);
+            REG[charToInt(regNo1)] = (uint)Convert.ToInt64(temp + tempREG[^4..], 16);
 
         }
         else if (line.Contains("BIC"))
@@ -797,8 +796,8 @@ public partial class STM32 : Form
                 var valStartsHere = temp.IndexOf('x');
                 temp = temp[(valStartsHere + 1)..];
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-                var val = Convert.ToInt64(temp, 16);
-                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] & NOT(val);
+                long val = Convert.ToInt64(temp, 16);
+                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] & NOT((uint)val);
             }
             else if (temp.Contains('r'))
             {
@@ -827,7 +826,7 @@ public partial class STM32 : Form
 
             for (var i = 8 - tempREG.Length; i > 0; i--)
                 tempREG = '0' + tempREG;
-            REG[charToInt(regNo1)] = Convert.ToInt64(tempREG[..4] + temp, 16);
+            REG[charToInt(regNo1)] = (uint)Convert.ToInt64(tempREG[..4] + temp, 16);
         }
         else if (line.Contains("MOV"))
         {
@@ -841,7 +840,7 @@ public partial class STM32 : Form
             temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
             var val = Convert.ToInt64(temp, 16);
 
-            REG[charToInt(regNo1)] = val;
+            REG[charToInt(regNo1)] = (uint)val;
 
         }
         else if (line.Contains("AND"))
@@ -862,7 +861,7 @@ public partial class STM32 : Form
             var val = Convert.ToInt64(temp, 16);
             //Console.WriteLine(REG[charToInt(regNo2)] | val);
 
-            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] & val;
+            REG[charToInt(regNo1)] = (uint)(REG[charToInt(regNo2)] & val);
         }
         else if (line.Contains("EOR"))
         {
@@ -882,7 +881,7 @@ public partial class STM32 : Form
             var val = Convert.ToInt64(temp, 16);
             //Console.WriteLine(REG[charToInt(regNo2)] | val);
 
-            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] ^ val;
+            REG[charToInt(regNo1)] = (uint)(REG[charToInt(regNo2)] ^ val);
 
         }
         else if (line.Contains("ORN"))
@@ -900,15 +899,14 @@ public partial class STM32 : Form
             temp = temp[(valStartsHere + 1)..];
 
             temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-            var val = Convert.ToInt64(temp, 16);
+            long val = Convert.ToInt64(temp, 16);
 
-
-            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] | NOT(val);
+            REG[charToInt(regNo1)] = REG[charToInt(regNo2)] | NOT((uint)val);
         }
         else if (line.Contains("CMP"))
         {
             // N(negative) Z(zero) C(carry/borrow) V(overflow) Q(sticky saturation)
-            long CMPtemp = 0;
+            uint CMPtemp = 0;
             var IdxOfFirstReg = line.IndexOf('r');
             var regNo1 = line[IdxOfFirstReg + 1];
             temp = temp[(IdxOfFirstReg + 3)..];
@@ -919,7 +917,7 @@ public partial class STM32 : Form
                 temp = temp[(valStartsHere + 1)..];
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
                 var val = Convert.ToInt64(temp, 16);
-                CMPtemp = REG[charToInt(regNo1)] - val;
+                CMPtemp = (uint)(REG[charToInt(regNo1)] - val);
 
                 if (Convert.ToString(val, 2).Length == Convert.ToString(REG[charToInt(regNo1)] + val, 2).Length)
                     xPSR[2] = true;
@@ -1037,7 +1035,7 @@ public partial class STM32 : Form
             if (REG[charToInt(regNo1)] != 0)
                 for (var i = 0; i < lines.Length; i++)
                     if (lines.Contains(temp))
-                        REG[15] = i;
+                        REG[15] = (uint)i;
 
         }
         else if (line.Contains("CBZ"))
@@ -1055,7 +1053,7 @@ public partial class STM32 : Form
             if (REG[charToInt(regNo1)] == 0)
                 for (var i = 0; i < lines.Length; i++)
                     if (lines.Contains(temp))
-                        REG[15] = i;
+                        REG[15] = (uint)i;
 
         }
         else if (line.Contains("VMRS"))
@@ -1231,7 +1229,7 @@ public partial class STM32 : Form
 
                 }
 
-                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] - val;
+                REG[charToInt(regNo1)] = (uint)(REG[charToInt(regNo2)] - val);
             }
             else if (line.Contains("#"))
             {
@@ -1248,15 +1246,15 @@ public partial class STM32 : Form
                 temp = temp[(valStartsHere + 1)..];
 
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-                long val;
+                uint val;
                 if (temp.Contains('x'))
                 {
                     temp = temp[2..];
-                    val = Convert.ToInt64(temp, 16);
+                    val = (uint)Convert.ToInt64(temp, 16);
                 }
                 else
                 {
-                    val = Convert.ToInt64(temp, 10);
+                    val = (uint)Convert.ToInt64(temp, 10);
                 }
                 //Console.WriteLine(REG[charToInt(regNo2)] | val);
                 {
@@ -1340,7 +1338,7 @@ public partial class STM32 : Form
 
                 }
 
-                REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + val;
+                REG[charToInt(regNo1)] = (uint)(REG[charToInt(regNo2)] + val);
             }
             else if (line.Contains("#"))
             {
@@ -1357,15 +1355,15 @@ public partial class STM32 : Form
                 temp = temp[(valStartsHere + 1)..];
 
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-                long val;
+                uint val;
                 if (temp.Contains('x'))
                 {
                     temp = temp[2..];
-                    val = Convert.ToInt64(temp, 16);
+                    val = (uint)Convert.ToInt64(temp, 16);
                 }
                 else
                 {
-                    val = Convert.ToInt64(temp, 10);
+                    val = (uint)Convert.ToInt64(temp, 10);
                 }
                 //Console.WriteLine(REG[charToInt(regNo2)] | val);
                 {
@@ -1546,8 +1544,8 @@ public partial class STM32 : Form
                 //Console.WriteLine(REG[charToInt(regNo2)] | val);
 
 
-                if (xPSR[2]) REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + val + 1;
-                else REG[charToInt(regNo1)] = REG[charToInt(regNo2)] + val;
+                if (xPSR[2]) REG[charToInt(regNo1)] = (uint)(REG[charToInt(regNo2)] + val + 1);
+                else REG[charToInt(regNo1)] = (uint)(REG[charToInt(regNo2)] + val);
 
             }
             else if (line.Contains("#"))
@@ -1556,7 +1554,7 @@ public partial class STM32 : Form
                 temp = temp[(valStartsHere + 1)..];
 
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-                long val = val = Convert.ToInt64(temp, 10);
+                uint val = val = (uint)Convert.ToInt64(temp, 10);
                 //Console.WriteLine(REG[charToInt(regNo2)] | val);
                 if (line.Contains("ADCS"))
                 {
@@ -1637,7 +1635,7 @@ public partial class STM32 : Form
         else if (line.Contains("CLZ"))
         {
 
-            long c(long x)
+            uint c(uint x)
             {
                 return x < 0 ? 0 : c(x - ~x) + 1;
             } //  recursive
@@ -1657,7 +1655,7 @@ public partial class STM32 : Form
         { //Need to fix branching
 
 
-            long val = 0;
+            uint val = 0;
 
             if (line.Contains("BX"))
             {
@@ -1678,7 +1676,7 @@ public partial class STM32 : Form
                 var valStartsHere = temp.IndexOf('x');
                 temp = temp[(valStartsHere + 1)..];
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
-                val = Convert.ToInt64(temp, 16);
+                val = (uint)Convert.ToInt64(temp, 16);
 
                 if (PC_FromKeil[val] != 0)
                     //Console.WriteLine("before change: {0}",REG[15]);
@@ -1696,9 +1694,9 @@ public partial class STM32 : Form
 
 
     public static bool[] xPSR = { false, true, true, false, false }; // N(negative) Z(zero) C(carry/borrow) V(overflow) Q(sticky saturation)
-    public static long FPSCR = 0x03000000, FPSID, FPEXC;
-    public static long[] PC_FromKeil = new long[0x9000000];
-    public static long KeilPC = 0x08000346;
+    public static uint FPSCR = 0x03000000, FPSID, FPEXC;
+    public static uint[] PC_FromKeil = new uint[0x9000000];
+    public static uint KeilPC = 0x08000346;
     private static void Cycles(string Instr_Line)
     {
         PC_FromKeil[KeilPC] = REG[15]; // Translating Keil PC to my PC
@@ -1794,7 +1792,7 @@ public partial class STM32 : Form
         Update_TIM2();
 
     }
-    private string LongToString32(long number)
+    private string uintToString32(uint number)
     {
 
         var b = Convert.ToString(number, 2);
@@ -1807,16 +1805,16 @@ public partial class STM32 : Form
     #region TIM1
 
     // PWM Timer 1
-    private long TIM1_PSC;
-    private long TIM1_ARR;
-    private long TIM1_CNT;
-    private long TIM1_CCMR1;
-    private long TIM1_CCER;
-    private long TIM1_CCR1;
-    private long Old_TIM1_CCR1;
-    private long TIM1_BDTR;
-    private long TIM1_CR1;
-    private long TIM1_SR;
+    private uint TIM1_PSC;
+    private uint TIM1_ARR;
+    private uint TIM1_CNT;
+    private uint TIM1_CCMR1;
+    private uint TIM1_CCER;
+    private uint TIM1_CCR1;
+    private uint Old_TIM1_CCR1;
+    private uint TIM1_BDTR;
+    private uint TIM1_CR1;
+    private uint TIM1_SR;
 
     private void Update_TIM1()
     {
@@ -1841,7 +1839,7 @@ public partial class STM32 : Form
         if (!TIM1_IsOn)
         {
 
-            if (TIM1_PSC != 0 && TIM1_ARR != 0 && TIM1_CR1 != 0 && LongToString32(Memory[0x48000420 / 4])[4..8] == "0001") // Only for PB6
+            if (TIM1_PSC != 0 && TIM1_ARR != 0 && TIM1_CR1 != 0 && uintToString32(Memory[0x48000420 / 4])[4..8] == "0001") // Only for PB6
             {
                 TIM1_IsOn = true;
             Begin_TIM1:
@@ -1865,11 +1863,11 @@ public partial class STM32 : Form
     #region TIM7
 
     // PWM Timer 1
-    private long TIM7_PSC;
-    private long TIM7_ARR;
-    private long TIM7_CNT;
-    private long TIM7_CR1;
-    private long TIM7_SR;
+    private uint TIM7_PSC;
+    private uint TIM7_ARR;
+    private uint TIM7_CNT;
+    private uint TIM7_CR1;
+    private uint TIM7_SR;
 
     private void Update_TIM7()
     {
@@ -1907,11 +1905,11 @@ public partial class STM32 : Form
     #region TIM6
 
     // PWM Timer 1
-    private long TIM6_PSC;
-    private long TIM6_ARR;
-    private long TIM6_CNT;
-    private long TIM6_CR1;
-    private long TIM6_SR;
+    private uint TIM6_PSC;
+    private uint TIM6_ARR;
+    private uint TIM6_CNT;
+    private uint TIM6_CR1;
+    private uint TIM6_SR;
 
     private void Update_TIM6()
     {
@@ -1949,16 +1947,16 @@ public partial class STM32 : Form
     #region TIM16
 
     //  Timer 16
-    private long TIM16_PSC;
-    private long TIM16_ARR;
-    private long TIM16_CNT;
-    private long TIM16_CCMR1;
-    private long TIM16_CCER;
-    private long TIM16_CCR1;
-    private long Old_TIM16_CCR1;
-    private long TIM16_BDTR;
-    private long TIM16_CR1;
-    private long TIM16_SR;
+    private uint TIM16_PSC;
+    private uint TIM16_ARR;
+    private uint TIM16_CNT;
+    private uint TIM16_CCMR1;
+    private uint TIM16_CCER;
+    private uint TIM16_CCR1;
+    private uint Old_TIM16_CCR1;
+    private uint TIM16_BDTR;
+    private uint TIM16_CR1;
+    private uint TIM16_SR;
 
     private void Update_TIM16()
     {
@@ -1999,16 +1997,16 @@ public partial class STM32 : Form
     #region TIM15
 
     //  Timer 15
-    private long TIM15_PSC;
-    private long TIM15_ARR;
-    private long TIM15_CNT;
-    private long TIM15_CCMR1;
-    private long TIM15_CCER;
-    private long TIM15_CCR1;
-    private long Old_TIM15_CCR1;
-    private long TIM15_BDTR;
-    private long TIM15_CR1;
-    private long TIM15_SR;
+    private uint TIM15_PSC;
+    private uint TIM15_ARR;
+    private uint TIM15_CNT;
+    private uint TIM15_CCMR1;
+    private uint TIM15_CCER;
+    private uint TIM15_CCR1;
+    private uint Old_TIM15_CCR1;
+    private uint TIM15_BDTR;
+    private uint TIM15_CR1;
+    private uint TIM15_SR;
 
     private void Update_TIM15()
     {
@@ -2049,16 +2047,16 @@ public partial class STM32 : Form
     #region TIM3
 
     //  Timer 3
-    private long TIM3_PSC;
-    private long TIM3_ARR;
-    private long TIM3_CNT;
-    private long TIM3_CCMR1;
-    private long TIM3_CCER;
-    private long TIM3_CCR1;
-    private long Old_TIM3_CCR1;
-    private long TIM3_BDTR;
-    private long TIM3_CR1;
-    private long TIM3_SR;
+    private uint TIM3_PSC;
+    private uint TIM3_ARR;
+    private uint TIM3_CNT;
+    private uint TIM3_CCMR1;
+    private uint TIM3_CCER;
+    private uint TIM3_CCR1;
+    private uint Old_TIM3_CCR1;
+    private uint TIM3_BDTR;
+    private uint TIM3_CR1;
+    private uint TIM3_SR;
 
     private void Update_TIM3()
     {
@@ -2099,16 +2097,16 @@ public partial class STM32 : Form
     #region TIM2
 
     //  Timer 2
-    private long TIM2_PSC;
-    private long TIM2_ARR;
-    private long TIM2_CNT;
-    private long TIM2_CCMR1;
-    private long TIM2_CCER;
-    private long TIM2_CCR1;
-    private long Old_TIM2_CCR1;
-    private long TIM2_BDTR;
-    private long TIM2_CR1;
-    private long TIM2_SR;
+    private uint TIM2_PSC;
+    private uint TIM2_ARR;
+    private uint TIM2_CNT;
+    private uint TIM2_CCMR1;
+    private uint TIM2_CCER;
+    private uint TIM2_CCR1;
+    private uint Old_TIM2_CCR1;
+    private uint TIM2_BDTR;
+    private uint TIM2_CR1;
+    private uint TIM2_SR;
 
 
     private void Update_TIM2()
