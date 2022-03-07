@@ -96,9 +96,15 @@ public partial class STM32 : Form
     private void Pause_Button_Click(object sender, EventArgs e)
     {
         if (Pause_Bool) // Pause is on
-            Pause_Bool = false;
+        { Pause_Bool = false;
+         this.Pause_Button.BackColor = Color.LightGray;
+         this.Pause_Button.Text = "Pause";
+        }
         else if (!Pause_Bool) // pause is off
-            Pause_Bool = true;
+        { Pause_Bool = true;
+            this.Pause_Button.BackColor = Color.Green;
+            this.Pause_Button.Text = "Paused";
+        }
 
     }
 
@@ -204,7 +210,7 @@ public partial class STM32 : Form
     public static string CurrInstru = "";
     public static string NextInstru = "";
 
-    public static bool Pause_Bool;
+    public static bool Pause_Bool = false;
 
     public void Update_Intr()
     {
@@ -1635,7 +1641,7 @@ public partial class STM32 : Form
         else if (line.Contains("CLZ"))
         {
 
-            uint c(uint x)
+            long c(long x)
             {
                 return x < 0 ? 0 : c(x - ~x) + 1;
             } //  recursive
@@ -1647,7 +1653,7 @@ public partial class STM32 : Form
             var r2 = temp.IndexOf('r');
             var regNo2 = temp[r2 + 1];
 
-            REG[charToInt(regNo1)] = c(REG[charToInt(regNo2)]);
+            REG[charToInt(regNo1)] = (uint)c(REG[charToInt(regNo2)]);
 
 
         }
