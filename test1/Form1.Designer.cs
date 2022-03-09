@@ -82,6 +82,8 @@ partial class STM32
             this.PWM = new System.Windows.Forms.PictureBox();
             this.InputBox = new System.Windows.Forms.TextBox();
             this.Input_TextBox = new System.Windows.Forms.Button();
+            this.TimerOpenButton = new System.Windows.Forms.Button();
+            this.TIM1_textbox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox3)).BeginInit();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -553,11 +555,31 @@ partial class STM32
             this.Input_TextBox.UseVisualStyleBackColor = true;
             this.Input_TextBox.Click += new System.EventHandler(this.Input_TextBox_Click);
             // 
+            // TimerOpenButton
+            // 
+            this.TimerOpenButton.Location = new System.Drawing.Point(421, 489);
+            this.TimerOpenButton.Name = "TimerOpenButton";
+            this.TimerOpenButton.Size = new System.Drawing.Size(135, 29);
+            this.TimerOpenButton.TabIndex = 46;
+            this.TimerOpenButton.Text = "Open Timers";
+            this.TimerOpenButton.UseVisualStyleBackColor = true;
+            this.TimerOpenButton.Click += new System.EventHandler(this.TimerOpenButton_Click);
+            // 
+            // TIM1_textbox
+            // 
+            this.TIM1_textbox.Location = new System.Drawing.Point(437, 537);
+            this.TIM1_textbox.Multiline = true;
+            this.TIM1_textbox.Name = "TIM1_textbox";
+            this.TIM1_textbox.Size = new System.Drawing.Size(116, 152);
+            this.TIM1_textbox.TabIndex = 47;
+            // 
             // STM32
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1077, 722);
+            this.Controls.Add(this.TIM1_textbox);
+            this.Controls.Add(this.TimerOpenButton);
             this.Controls.Add(this.Input_TextBox);
             this.Controls.Add(this.InputBox);
             this.Controls.Add(this.PWM);
@@ -819,4 +841,6 @@ partial class STM32
     private PictureBox PWM;
     private TextBox InputBox;
     private Button Input_TextBox;
+    private Button TimerOpenButton;
+    private TextBox TIM1_textbox;
 }

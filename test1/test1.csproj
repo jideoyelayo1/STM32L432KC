@@ -10,6 +10,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="HIC.System.Windows.Forms.DataVisualization" Version="1.0.1" />
+      <PackageReference Include="Maikebing.System.Windows.Forms.DataVisualization" Version="5.0.1" />
+      <PackageReference Include="Syncfusion.SfChart.WPF" Version="19.4.0.54" />
+    </ItemGroup>
+
+    <ItemGroup>
       <Compile Update="Properties\Resources.Designer.cs">
         <DesignTime>True</DesignTime>
         <AutoGen>True</AutoGen>

@@ -43,6 +43,20 @@
       "frameworks": {
         "net6.0-windows7.0": {
           "targetAlias": "net6.0-windows",
+          "dependencies": {
+            "HIC.System.Windows.Forms.DataVisualization": {
+              "target": "Package",
+              "version": "[1.0.1, )"
+            },
+            "Maikebing.System.Windows.Forms.DataVisualization": {
+              "target": "Package",
+              "version": "[5.0.1, )"
+            },
+            "Syncfusion.SfChart.WPF": {
+              "target": "Package",
+              "version": "[19.4.0.54, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",

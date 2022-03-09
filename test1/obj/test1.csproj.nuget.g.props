@@ -13,4 +13,7 @@
     <SourceRoot Include="C:\Users\JideO\.nuget\packages\" />
     <SourceRoot Include="C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages\" />
   </ItemGroup>
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <PkgSyncfusion_SfChart_WPF Condition=" '$(PkgSyncfusion_SfChart_WPF)' == '' ">C:\Users\JideO\.nuget\packages\syncfusion.sfchart.wpf\19.4.0.54</PkgSyncfusion_SfChart_WPF>
+  </PropertyGroup>
 </Project>
