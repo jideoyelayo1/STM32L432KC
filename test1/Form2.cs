@@ -58,5 +58,51 @@ namespace test1
             }
         }
 
+        private void Clear_Memory_box_Click(object sender, EventArgs e)
+        {
+            this.MemoryOutputTextBox.Text = "";
+        }
+
+        private void Load_This_Mem_Click(object sender, EventArgs e)
+        {
+            if (this.MemoryTextInput.Text.Count(x => x == 'x') == 1)
+            {
+                char[] AcceptableValues = { '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F' };
+                var NumOfAccVals = 0;
+                var temp = this.MemoryTextInput.Text;
+                var PosOfX = temp.IndexOf('x');
+                temp = temp[(PosOfX + 1)..];
+                temp = String.Concat(temp.Where(c => !Char.IsWhiteSpace(c)));
+                foreach(char c in temp)
+                {
+                    if (AcceptableValues.Contains(c))
+                        NumOfAccVals++;
+                }
+
+                if (NumOfAccVals == temp.Length)
+                {
+                    var AddressToSearch = Convert.ToInt64(temp, 16);
+                    if(AddressToSearch <= 0xffffffff)
+                    this.MemoryOutputTextBox.Text += "0x" + Convert.ToString(AddressToSearch, 16) + ": " + STM32.LoadMem(AddressToSearch) + "\n";
+                    else
+                        this.MemoryTextInput.Text = "Invalid Input";
+
+                }
+                else
+                {
+                    this.MemoryTextInput.Text = "Invalid Input";
+                }
+
+
+            }else if (this.MemoryTextInput.Text == "Invalid Input")
+            {
+                this.MemoryTextInput.Text = "";
+            }
+            else
+            {
+                this.MemoryTextInput.Text = "Invalid Input";
+            }
+
+        }
     }
 }

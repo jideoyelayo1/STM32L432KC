@@ -31,8 +31,6 @@ namespace test1
         /// </summary>
         private void InitializeComponent()
         {
-            this.LoadTimers = new System.Windows.Forms.Button();
-            this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.sqlCommand1 = new Microsoft.Data.SqlClient.SqlCommand();
             this.TIM1_textbox = new System.Windows.Forms.TextBox();
             this.sqlCommand2 = new Microsoft.Data.SqlClient.SqlCommand();
@@ -43,27 +41,11 @@ namespace test1
             this.TIM_7_button = new System.Windows.Forms.Button();
             this.TIM_15_button = new System.Windows.Forms.Button();
             this.TIM_16_button = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            this.Load_This_Mem = new System.Windows.Forms.Button();
+            this.MemoryTextInput = new System.Windows.Forms.TextBox();
+            this.MemoryOutputTextBox = new System.Windows.Forms.RichTextBox();
+            this.Clear_Memory_box = new System.Windows.Forms.Button();
             this.SuspendLayout();
-            // 
-            // LoadTimers
-            // 
-            this.LoadTimers.Location = new System.Drawing.Point(663, 390);
-            this.LoadTimers.Name = "LoadTimers";
-            this.LoadTimers.Size = new System.Drawing.Size(99, 29);
-            this.LoadTimers.TabIndex = 23;
-            this.LoadTimers.Text = "Generate Graphs";
-            this.LoadTimers.UseVisualStyleBackColor = true;
-            this.LoadTimers.Click += new System.EventHandler(this.LoadTimers_Click);
-            // 
-            // dataGridView1
-            // 
-            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(32, 250);
-            this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.RowHeadersWidth = 51;
-            this.dataGridView1.Size = new System.Drawing.Size(300, 188);
-            this.dataGridView1.TabIndex = 24;
             // 
             // sqlCommand1
             // 
@@ -74,10 +56,10 @@ namespace test1
             // 
             // TIM1_textbox
             // 
-            this.TIM1_textbox.Location = new System.Drawing.Point(356, 234);
+            this.TIM1_textbox.Location = new System.Drawing.Point(356, 199);
             this.TIM1_textbox.Multiline = true;
             this.TIM1_textbox.Name = "TIM1_textbox";
-            this.TIM1_textbox.Size = new System.Drawing.Size(74, 204);
+            this.TIM1_textbox.Size = new System.Drawing.Size(74, 239);
             this.TIM1_textbox.TabIndex = 25;
             // 
             // sqlCommand2
@@ -150,11 +132,50 @@ namespace test1
             this.TIM_16_button.Text = "Timer 16";
             this.TIM_16_button.UseVisualStyleBackColor = true;
             // 
+            // Load_This_Mem
+            // 
+            this.Load_This_Mem.Location = new System.Drawing.Point(159, 118);
+            this.Load_This_Mem.Name = "Load_This_Mem";
+            this.Load_This_Mem.Size = new System.Drawing.Size(94, 29);
+            this.Load_This_Mem.TabIndex = 33;
+            this.Load_This_Mem.Text = "Load This Address";
+            this.Load_This_Mem.UseVisualStyleBackColor = true;
+            this.Load_This_Mem.Click += new System.EventHandler(this.Load_This_Mem_Click);
+            // 
+            // MemoryTextInput
+            // 
+            this.MemoryTextInput.Location = new System.Drawing.Point(28, 120);
+            this.MemoryTextInput.Name = "MemoryTextInput";
+            this.MemoryTextInput.Size = new System.Drawing.Size(125, 27);
+            this.MemoryTextInput.TabIndex = 34;
+            // 
+            // MemoryOutputTextBox
+            // 
+            this.MemoryOutputTextBox.Location = new System.Drawing.Point(28, 168);
+            this.MemoryOutputTextBox.Name = "MemoryOutputTextBox";
+            this.MemoryOutputTextBox.Size = new System.Drawing.Size(125, 118);
+            this.MemoryOutputTextBox.TabIndex = 35;
+            this.MemoryOutputTextBox.Text = "";
+            // 
+            // Clear_Memory_box
+            // 
+            this.Clear_Memory_box.Location = new System.Drawing.Point(159, 167);
+            this.Clear_Memory_box.Name = "Clear_Memory_box";
+            this.Clear_Memory_box.Size = new System.Drawing.Size(94, 29);
+            this.Clear_Memory_box.TabIndex = 36;
+            this.Clear_Memory_box.Text = "Clear Memory Box";
+            this.Clear_Memory_box.UseVisualStyleBackColor = true;
+            this.Clear_Memory_box.Click += new System.EventHandler(this.Clear_Memory_box_Click);
+            // 
             // TimerWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.Clear_Memory_box);
+            this.Controls.Add(this.MemoryOutputTextBox);
+            this.Controls.Add(this.MemoryTextInput);
+            this.Controls.Add(this.Load_This_Mem);
             this.Controls.Add(this.TIM_16_button);
             this.Controls.Add(this.TIM_15_button);
             this.Controls.Add(this.TIM_7_button);
@@ -163,20 +184,14 @@ namespace test1
             this.Controls.Add(this.TIM_2_button);
             this.Controls.Add(this.TIM_1_button);
             this.Controls.Add(this.TIM1_textbox);
-            this.Controls.Add(this.dataGridView1);
-            this.Controls.Add(this.LoadTimers);
             this.Name = "TimerWindow";
             this.Text = "TimerWindow";
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
-
-        private Button LoadTimers;
-        private DataGridView dataGridView1;
         private Microsoft.Data.SqlClient.SqlCommand sqlCommand1;
         private TextBox TIM1_textbox;
         private Microsoft.Data.SqlClient.SqlCommand sqlCommand2;
@@ -188,5 +203,9 @@ namespace test1
         private Button TIM_7_button;
         private Button TIM_15_button;
         private Button TIM_16_button;
+        private Button Load_This_Mem;
+        private TextBox MemoryTextInput;
+        private RichTextBox MemoryOutputTextBox;
+        private Button Clear_Memory_box;
     }
 }
