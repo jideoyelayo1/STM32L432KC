@@ -1845,38 +1845,58 @@ public partial class STM32 : Form
         //Console.WriteLine("Cycle:{0} REG:{2} Line:{1} ",Convert.ToString(KeilPC,16),Instr_Line,REG[15]);
 
         if (Instr_Line.Contains("JIDE")) KeilPC += 2;
-        // 4 letters
-        else if (Instr_Line.Contains("MOVS")) KeilPC += 2;
-        else if (Instr_Line.Contains("MOVT")) KeilPC += 4;
-        else if (Instr_Line.Contains("MOVW")) KeilPC += 4;
-        else if (Instr_Line.Contains("LSLS")) KeilPC += 2;
-        else if (Instr_Line.Contains("VMRS")) KeilPC += 4;
-        else if (Instr_Line.Contains("VMSR")) KeilPC += 4;
-        else if (Instr_Line.Contains("ADDS")) KeilPC += 2;
-        else if (Instr_Line.Contains("LSRS")) KeilPC += 2;
-        else if (Instr_Line.Contains("LDRB")) KeilPC += 4;
-        else if (Instr_Line.Contains("CBNZ")) KeilPC += 2;
-        else if (Instr_Line.Contains("BEQ.W")) KeilPC += 4;
-        else if (Instr_Line.Contains("STRB")) KeilPC += 4;
-        else if (Instr_Line.Contains("SUBS")) KeilPC += 2;
-        // 3 letters
-        else if (Instr_Line.Contains("CLZ")) KeilPC += 4;
-        else if (Instr_Line.Contains("CBZ")) KeilPC += 2;
-        else if (Instr_Line.Contains("BNE")) KeilPC += 2;
-        else if (Instr_Line.Contains("CMP")) KeilPC += 2;
-        else if (Instr_Line.Contains("DCW")) KeilPC += 2;
-        else if (Instr_Line.Contains("LDR")) KeilPC += 2;
-        else if (Instr_Line.Contains("ORR")) KeilPC += 4;
-        else if (Instr_Line.Contains("STR")) KeilPC += 2;
-        else if (Instr_Line.Contains("MOV")) KeilPC += 4;
-        else if (Instr_Line.Contains("AND")) KeilPC += 4;
-        else if (Instr_Line.Contains("BEQ")) KeilPC += 2;
-        else if (Instr_Line.Contains("BIC")) KeilPC += 4;
-        // 2 letters
-        else if (Instr_Line.Contains("BX")) KeilPC += 2;
-        else if (Instr_Line.Contains("IT")) KeilPC += 2;
-        // 1 letter
-        else if (Instr_Line.Contains('B')) KeilPC += 2;
+        //6 letters
+        //5 letters
+        else if (Instr_Line.Contains(" ADR.W ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" NOP.W ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" BEQ.W ")) KeilPC += 4;
+        //4 letters
+        else if (Instr_Line.Contains(" BL.W ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" SUBS ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" MOVS ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" LSLS ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" PUSH ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" BKPT ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" MOVW ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" MOVT ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" ANDS ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" STRB ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" LSRS ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" LDRB ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" CBNZ ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" VMRS ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" VMSR ")) KeilPC += 4;
+        //3 letters
+        else if (Instr_Line.Contains(" DCW ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" ADR ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" LDM ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" ADD ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" SUB ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" CMP ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" BNE ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" TST ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" ORR ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" STM ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" BHI ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" STR ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" POP ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" MOV ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" LDR ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" BLX ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" BIC ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" B.W ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" BPL ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" EOR ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" AND ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" BEQ ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" CLZ ")) KeilPC += 4;
+        else if (Instr_Line.Contains(" CBZ ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" DCD ")) KeilPC += 4;
+        //2 letters
+        else if (Instr_Line.Contains(" IT ")) KeilPC += 2;
+        else if (Instr_Line.Contains(" BX ")) KeilPC += 2;
+        //1 letters
+        else if (Instr_Line.Contains(" B ")) KeilPC += 2;
 
     }
 
