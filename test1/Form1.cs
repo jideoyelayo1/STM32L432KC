@@ -200,7 +200,8 @@ public partial class STM32 : Form
     #region FrontEnd
 
     public static string fileToRun ;
-    public static int ClockSpeed = 100; // milliseconds
+    public static int ClockSpeed = 100; // Clockspeed of Instructions
+    public static int clockspeed = 10; // Clockspeed of timers
 
     public static string CurrInstru = "";
     public static string NextInstru = "";
@@ -620,7 +621,6 @@ public partial class STM32 : Form
                         var IdxOfFirstReg = line.IndexOf('r');
                         var regNo1 = line[IdxOfFirstReg + 1];
                         temp = temp[(IdxOfFirstReg + 3)..];
-                        char regNo2;
 
                         var IndexOfS = temp.IndexOf('s');
                         var SIndex = temp[IndexOfS + 1];
@@ -2382,7 +2382,7 @@ public partial class STM32 : Form
 
 
 
-    int clockspeed = 10; // Clockspeed of timers
+    
 }
 
 

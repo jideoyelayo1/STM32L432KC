@@ -45,6 +45,14 @@ namespace test1
             this.MemoryTextInput = new System.Windows.Forms.TextBox();
             this.MemoryOutputTextBox = new System.Windows.Forms.RichTextBox();
             this.Clear_Memory_box = new System.Windows.Forms.Button();
+            this.sqlCommand3 = new Microsoft.Data.SqlClient.SqlCommand();
+            this.Instru_clockspeed3 = new System.Windows.Forms.Button();
+            this.Instru_clockspeed2 = new System.Windows.Forms.Button();
+            this.Instru_clockspeed1 = new System.Windows.Forms.Button();
+            this.Timer_clockspeed4 = new System.Windows.Forms.Button();
+            this.Timer_clockspeed3 = new System.Windows.Forms.Button();
+            this.Timer_clockspeed2 = new System.Windows.Forms.Button();
+            this.Timer_clockspeed1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // sqlCommand1
@@ -167,11 +175,95 @@ namespace test1
             this.Clear_Memory_box.UseVisualStyleBackColor = true;
             this.Clear_Memory_box.Click += new System.EventHandler(this.Clear_Memory_box_Click);
             // 
+            // sqlCommand3
+            // 
+            this.sqlCommand3.CommandTimeout = 30;
+            this.sqlCommand3.Connection = null;
+            this.sqlCommand3.Notification = null;
+            this.sqlCommand3.Transaction = null;
+            // 
+            // Instru_clockspeed3
+            // 
+            this.Instru_clockspeed3.Location = new System.Drawing.Point(563, 409);
+            this.Instru_clockspeed3.Name = "Instru_clockspeed3";
+            this.Instru_clockspeed3.Size = new System.Drawing.Size(209, 29);
+            this.Instru_clockspeed3.TabIndex = 43;
+            this.Instru_clockspeed3.Text = "Instruction Clockspeed = 100";
+            this.Instru_clockspeed3.UseVisualStyleBackColor = true;
+            this.Instru_clockspeed3.Click += new System.EventHandler(this.Instru_clockspeed3_Click);
+            // 
+            // Instru_clockspeed2
+            // 
+            this.Instru_clockspeed2.Location = new System.Drawing.Point(563, 374);
+            this.Instru_clockspeed2.Name = "Instru_clockspeed2";
+            this.Instru_clockspeed2.Size = new System.Drawing.Size(209, 29);
+            this.Instru_clockspeed2.TabIndex = 42;
+            this.Instru_clockspeed2.Text = "Instruction Clockspeed = 50";
+            this.Instru_clockspeed2.UseVisualStyleBackColor = true;
+            this.Instru_clockspeed2.Click += new System.EventHandler(this.Instru_clockspeed2_Click);
+            // 
+            // Instru_clockspeed1
+            // 
+            this.Instru_clockspeed1.Location = new System.Drawing.Point(563, 339);
+            this.Instru_clockspeed1.Name = "Instru_clockspeed1";
+            this.Instru_clockspeed1.Size = new System.Drawing.Size(209, 29);
+            this.Instru_clockspeed1.TabIndex = 41;
+            this.Instru_clockspeed1.Text = "Instruction Clockspeed = 10";
+            this.Instru_clockspeed1.UseVisualStyleBackColor = true;
+            this.Instru_clockspeed1.Click += new System.EventHandler(this.Instru_clockspeed1_Click);
+            // 
+            // Timer_clockspeed4
+            // 
+            this.Timer_clockspeed4.Location = new System.Drawing.Point(563, 304);
+            this.Timer_clockspeed4.Name = "Timer_clockspeed4";
+            this.Timer_clockspeed4.Size = new System.Drawing.Size(209, 29);
+            this.Timer_clockspeed4.TabIndex = 40;
+            this.Timer_clockspeed4.Text = "Timer ClockSpeed = 200";
+            this.Timer_clockspeed4.UseVisualStyleBackColor = true;
+            this.Timer_clockspeed4.Click += new System.EventHandler(this.Timer_clockspeed4_Click);
+            // 
+            // Timer_clockspeed3
+            // 
+            this.Timer_clockspeed3.Location = new System.Drawing.Point(563, 269);
+            this.Timer_clockspeed3.Name = "Timer_clockspeed3";
+            this.Timer_clockspeed3.Size = new System.Drawing.Size(209, 29);
+            this.Timer_clockspeed3.TabIndex = 39;
+            this.Timer_clockspeed3.Text = "Timer Clockspeed = 100";
+            this.Timer_clockspeed3.UseVisualStyleBackColor = true;
+            this.Timer_clockspeed3.Click += new System.EventHandler(this.Timer_clockspeed3_Click);
+            // 
+            // Timer_clockspeed2
+            // 
+            this.Timer_clockspeed2.Location = new System.Drawing.Point(563, 234);
+            this.Timer_clockspeed2.Name = "Timer_clockspeed2";
+            this.Timer_clockspeed2.Size = new System.Drawing.Size(209, 29);
+            this.Timer_clockspeed2.TabIndex = 38;
+            this.Timer_clockspeed2.Text = "Timer Clockspeed = 50";
+            this.Timer_clockspeed2.UseVisualStyleBackColor = true;
+            this.Timer_clockspeed2.Click += new System.EventHandler(this.Timer_clockspeed2_Click);
+            // 
+            // Timer_clockspeed1
+            // 
+            this.Timer_clockspeed1.Location = new System.Drawing.Point(563, 199);
+            this.Timer_clockspeed1.Name = "Timer_clockspeed1";
+            this.Timer_clockspeed1.Size = new System.Drawing.Size(209, 29);
+            this.Timer_clockspeed1.TabIndex = 37;
+            this.Timer_clockspeed1.Text = "Timer ClockSpeed = 10";
+            this.Timer_clockspeed1.UseVisualStyleBackColor = true;
+            this.Timer_clockspeed1.Click += new System.EventHandler(this.Timer_clockspeed1_Click);
+            // 
             // TimerWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.Instru_clockspeed3);
+            this.Controls.Add(this.Instru_clockspeed2);
+            this.Controls.Add(this.Instru_clockspeed1);
+            this.Controls.Add(this.Timer_clockspeed4);
+            this.Controls.Add(this.Timer_clockspeed3);
+            this.Controls.Add(this.Timer_clockspeed2);
+            this.Controls.Add(this.Timer_clockspeed1);
             this.Controls.Add(this.Clear_Memory_box);
             this.Controls.Add(this.MemoryOutputTextBox);
             this.Controls.Add(this.MemoryTextInput);
@@ -207,5 +299,13 @@ namespace test1
         private TextBox MemoryTextInput;
         private RichTextBox MemoryOutputTextBox;
         private Button Clear_Memory_box;
+        private Microsoft.Data.SqlClient.SqlCommand sqlCommand3;
+        private Button Instru_clockspeed3;
+        private Button Instru_clockspeed2;
+        private Button Instru_clockspeed1;
+        private Button Timer_clockspeed4;
+        private Button Timer_clockspeed3;
+        private Button Timer_clockspeed2;
+        private Button Timer_clockspeed1;
     }
 }

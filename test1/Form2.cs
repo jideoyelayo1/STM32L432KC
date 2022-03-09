@@ -54,7 +54,9 @@ namespace test1
                 if (STM32.LoadMem(0x40014410) == 1) this.TIM_16_button.BackColor = Color.Green;//TIM16
                 else this.TIM_16_button.BackColor = Color.DarkOrange;
 
-                await Task.Delay(10);
+                UpdateSpeeds();
+                await Task.Delay(20);
+                
             }
         }
 
@@ -104,5 +106,128 @@ namespace test1
             }
 
         }
+        bool TimClk1,TimClk2, TimClk3, TimClk4;
+
+        private void Timer_clockspeed3_Click(object sender, EventArgs e)
+        {
+            TimClk1 = false;
+            TimClk2 = false;
+            TimClk3 = true;
+            TimClk4 = false;
+        }
+
+        private void Timer_clockspeed4_Click(object sender, EventArgs e)
+        {
+            TimClk1 = false;
+            TimClk2 = false;
+            TimClk3 = false;
+            TimClk4 = true;
+        }
+
+        private void Instru_clockspeed1_Click(object sender, EventArgs e)
+        {
+            InstrClk1 = true;
+            InstrClk2 = false;
+            InstrClk3 = false;
+        }
+
+        private void Instru_clockspeed2_Click(object sender, EventArgs e)
+        {
+            InstrClk1 = false;
+            InstrClk2 = true;
+            InstrClk3 = false;
+        }
+
+        private void Instru_clockspeed3_Click(object sender, EventArgs e)
+        {
+            InstrClk1 = false;
+            InstrClk2 = false;
+            InstrClk3 = true;
+        }
+
+        private void Timer_clockspeed2_Click(object sender, EventArgs e)
+        {
+            TimClk1 = false;
+            TimClk2 = true;
+            TimClk3 = false;
+            TimClk4 = false;
+        }
+
+        bool InstrClk1,InstrClk2, InstrClk3;
+
+        private void Timer_clockspeed1_Click(object sender, EventArgs e)
+        {
+            TimClk1 = true;
+            TimClk2 = false;
+            TimClk3 = false;
+            TimClk4 = false;
+
+        }
+
+       private void UpdateSpeeds()
+        {
+            #region Timer Clock
+            if (TimClk1)
+            {
+                STM32.clockspeed = 10;
+                this.Timer_clockspeed1.BackColor = Color.Aquamarine;
+                this.Timer_clockspeed2.BackColor = Color.White;
+                this.Timer_clockspeed3.BackColor = Color.White;
+                this.Timer_clockspeed4.BackColor = Color.White;
+            }
+            else if (TimClk2)
+            {
+                STM32.clockspeed = 50;
+                this.Timer_clockspeed1.BackColor = Color.White;
+                this.Timer_clockspeed2.BackColor = Color.Aquamarine;
+                this.Timer_clockspeed3.BackColor = Color.White;
+                this.Timer_clockspeed4.BackColor = Color.White;
+            }
+            else if (TimClk3)
+            {
+                STM32.clockspeed = 100;
+                this.Timer_clockspeed1.BackColor = Color.White;
+                this.Timer_clockspeed2.BackColor = Color.White;
+                this.Timer_clockspeed3.BackColor = Color.Aquamarine;
+                this.Timer_clockspeed4.BackColor = Color.White;
+            }
+            else if (TimClk4)
+            {
+                STM32.clockspeed = 200;
+                this.Timer_clockspeed1.BackColor = Color.White;
+                this.Timer_clockspeed2.BackColor = Color.White;
+                this.Timer_clockspeed3.BackColor = Color.White;
+                this.Timer_clockspeed4.BackColor = Color.Aquamarine;
+            }
+            #endregion
+
+            #region Instruction Clock
+            if (InstrClk1)
+            {
+                STM32.ClockSpeed = 10;
+                this.Instru_clockspeed1.BackColor = Color.Plum;
+                this.Instru_clockspeed2.BackColor = Color.White;
+                this.Instru_clockspeed3.BackColor = Color.White;
+            }
+            else if (InstrClk2)
+            {
+                STM32.ClockSpeed = 50;
+                this.Instru_clockspeed1.BackColor = Color.White;
+                this.Instru_clockspeed2.BackColor = Color.Plum;
+                this.Instru_clockspeed3.BackColor = Color.White;
+            }
+            else if (InstrClk3)
+            {
+                STM32.ClockSpeed = 100;
+                this.Instru_clockspeed1.BackColor = Color.White;
+                this.Instru_clockspeed2.BackColor = Color.White;
+                this.Instru_clockspeed3.BackColor = Color.Plum;
+            }
+            #endregion
+
+
+
+        }
+
     }
 }

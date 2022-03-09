@@ -561,16 +561,16 @@ partial class STM32
             this.TimerOpenButton.Name = "TimerOpenButton";
             this.TimerOpenButton.Size = new System.Drawing.Size(135, 29);
             this.TimerOpenButton.TabIndex = 46;
-            this.TimerOpenButton.Text = "Open Timers";
+            this.TimerOpenButton.Text = "More Options";
             this.TimerOpenButton.UseVisualStyleBackColor = true;
             this.TimerOpenButton.Click += new System.EventHandler(this.TimerOpenButton_Click);
             // 
             // TIM1_textbox
             // 
-            this.TIM1_textbox.Location = new System.Drawing.Point(437, 537);
+            this.TIM1_textbox.Location = new System.Drawing.Point(421, 540);
             this.TIM1_textbox.Multiline = true;
             this.TIM1_textbox.Name = "TIM1_textbox";
-            this.TIM1_textbox.Size = new System.Drawing.Size(116, 152);
+            this.TIM1_textbox.Size = new System.Drawing.Size(132, 152);
             this.TIM1_textbox.TabIndex = 47;
             // 
             // STM32
