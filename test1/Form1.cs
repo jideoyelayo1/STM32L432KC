@@ -274,7 +274,7 @@ public partial class STM32 : Form
             Update_Intr();
 
 
-            await Task.Delay(ClockSpeed);
+            await Task.Delay(ClockSpeed* CycleTiming(lines[REG[15]]));
         }
     }
     private async void Step(string fname)
@@ -1899,6 +1899,62 @@ public partial class STM32 : Form
 
     }
 
+    private static int CycleTiming(string Instr_Line)
+    {
+        if (Instr_Line.Contains("Jide")) return 1;
+        //5 letters
+        else if (Instr_Line.Contains("ADR.W")) return 4;
+        else if (Instr_Line.Contains("NOP.W")) return 4;
+        else if (Instr_Line.Contains("BEQ.W")) return 4;
+        //4 letters
+        else if (Instr_Line.Contains("BL.W")) return 4;
+        else if (Instr_Line.Contains("SUBS")) return 2;
+        else if (Instr_Line.Contains("MOVS")) return 2;
+        else if (Instr_Line.Contains("LSLS")) return 2;
+        else if (Instr_Line.Contains("PUSH")) return 4;
+        else if (Instr_Line.Contains("BKPT")) return 2;
+        else if (Instr_Line.Contains("MOVW")) return 4;
+        else if (Instr_Line.Contains("MOVT")) return 4;
+        else if (Instr_Line.Contains("ANDS")) return 2;
+        else if (Instr_Line.Contains("STRB")) return 4;
+        else if (Instr_Line.Contains("LSRS")) return 2;
+        else if (Instr_Line.Contains("LDRB")) return 4;
+        else if (Instr_Line.Contains("CBNZ")) return 2;
+        else if (Instr_Line.Contains("VMRS")) return 4;
+        else if (Instr_Line.Contains("VMSR")) return 4;
+        //3 letters
+        else if (Instr_Line.Contains("DCW")) return 2;
+        else if (Instr_Line.Contains("ADR")) return 2;
+        else if (Instr_Line.Contains("LDM")) return 4;
+        else if (Instr_Line.Contains("ADD")) return 2;
+        else if (Instr_Line.Contains("SUB")) return 2;
+        else if (Instr_Line.Contains("CMP")) return 2;
+        else if (Instr_Line.Contains("BNE")) return 2;
+        else if (Instr_Line.Contains("TST")) return 4;
+        else if (Instr_Line.Contains("ORR")) return 4;
+        else if (Instr_Line.Contains("STM")) return 4;
+        else if (Instr_Line.Contains("BHI")) return 2;
+        else if (Instr_Line.Contains("STR")) return 2;
+        else if (Instr_Line.Contains("POP")) return 4;
+        else if (Instr_Line.Contains("MOV")) return 4;
+        else if (Instr_Line.Contains("LDR")) return 2;
+        else if (Instr_Line.Contains("BLX")) return 2;
+        else if (Instr_Line.Contains("BIC")) return 4;
+        else if (Instr_Line.Contains("B.W")) return 4;
+        else if (Instr_Line.Contains("BPL")) return 2;
+        else if (Instr_Line.Contains("EOR")) return 4;
+        else if (Instr_Line.Contains("AND")) return 4;
+        else if (Instr_Line.Contains("BEQ")) return 2;
+        else if (Instr_Line.Contains("CLZ")) return 4;
+        else if (Instr_Line.Contains("CBZ")) return 2;
+        else if (Instr_Line.Contains("DCD")) return 4;
+        //2 letters
+        else if (Instr_Line.Contains("IT")) return 2;
+        else if (Instr_Line.Contains("BX")) return 2;
+        //1 letters
+        else if (Instr_Line.Contains("B")) return 2;
+        return 1;
+    }
     private static void SetUp(string fname)
     {
 
