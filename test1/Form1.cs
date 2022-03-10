@@ -1967,28 +1967,32 @@ public partial class STM32 : Form
     }
     private static void SetUp(string fname)
     {
-
-        lines = File.ReadLines(fname).ToArray();
-        var yLen = lines.Length;
-        REG[15] = 0;
-
-        while (REG[15] < yLen)
+        if (LookAtInputTextBox != true)
         {
-            Cycles(lines[REG[15]]); //Console.WriteLine(lines[REG[15]]);
-            REG[15]++;
+
+
+            lines = File.ReadLines(fname).ToArray();
+            var yLen = lines.Length;
+            REG[15] = 0;
+
+            while (REG[15] < yLen)
+            {
+                Cycles(lines[REG[15]]); //Console.WriteLine(lines[REG[15]]);
+                REG[15]++;
+            }
+            REG[15] = 0;
+
+            #region MemorySetUp
+
+            // value, addr
+            for (var j = 0; j < 6; j++) // GPIOAs
+                for (var i = 0; i < 10; i++)
+                    if (i != 6)
+                        UpdateMem(0xABFFFFFF, 0x48000000 + 4 * i + j * 400);
+
+            #endregion
+
         }
-        REG[15] = 0;
-
-        #region MemorySetUp
-
-        // value, addr
-        for (var j = 0; j < 6; j++) // GPIOAs
-        for (var i = 0; i < 10; i++)
-            if (i != 6)
-                UpdateMem(0xABFFFFFF, 0x48000000 + 4 * i + j * 400);
-
-        #endregion
-
     }
 
     #endregion
