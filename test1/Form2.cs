@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Syncfusion.UI.Xaml.Charts;
 using System.Windows.Forms.DataVisualization;
-
+using System.Diagnostics;
 
 namespace test1
 {
@@ -186,7 +186,17 @@ namespace test1
 
         }
 
-       
+        private void button2_Click(object sender, EventArgs e)
+        {
+            string url = "https://github.com/jideoyelayo1/STM32L432KC";
+            System.Diagnostics.Process.Start(new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+            this.button2.ForeColor = System.Drawing.Color.Purple;
+
+        }
 
         bool InstrClk1,InstrClk2, InstrClk3;
 
