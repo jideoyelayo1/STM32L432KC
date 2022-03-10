@@ -53,6 +53,7 @@ namespace test1
             this.Timer_clockspeed3 = new System.Windows.Forms.Button();
             this.Timer_clockspeed2 = new System.Windows.Forms.Button();
             this.Timer_clockspeed1 = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // sqlCommand1
@@ -252,11 +253,22 @@ namespace test1
             this.Timer_clockspeed1.UseVisualStyleBackColor = true;
             this.Timer_clockspeed1.Click += new System.EventHandler(this.Timer_clockspeed1_Click);
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(356, 154);
+            this.button1.Name = "ConverToAssembly";
+            this.button1.Size = new System.Drawing.Size(416, 29);
+            this.button1.TabIndex = 44;
+            this.button1.Text = "Convert Assembly Code to Readable Assembly code";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
             // TimerWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.Instru_clockspeed3);
             this.Controls.Add(this.Instru_clockspeed2);
             this.Controls.Add(this.Instru_clockspeed1);
@@ -278,6 +290,7 @@ namespace test1
             this.Controls.Add(this.TIM1_textbox);
             this.Name = "TimerWindow";
             this.Text = "TimerWindow";
+            this.Load += new System.EventHandler(this.TimerWindow_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -307,5 +320,6 @@ namespace test1
         private Button Timer_clockspeed3;
         private Button Timer_clockspeed2;
         private Button Timer_clockspeed1;
+        private Button button1;
     }
 }

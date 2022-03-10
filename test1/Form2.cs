@@ -153,6 +153,41 @@ namespace test1
             TimClk4 = false;
         }
 
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string fname = null;
+            var openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                fname = openFileDialog.FileName;
+            }
+            if (fname != null)
+                FixingfileText(fname);
+        }
+        private  void FixingfileText(string fname)
+        {
+            var lines = File.ReadLines(fname).ToArray();
+            string[] temp = new string[lines.Length];
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Length > 21 && lines[i].Contains("0x080"))
+                    temp[i] = lines[i][21..];
+            }
+            var output = "";
+            for(int i = 0; i < temp.Length; i++)
+            {
+                output += temp[i] + "\n";
+            }
+
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                File.WriteAllText(saveFileDialog.FileName, output);
+
+        }
+
+       
+
         bool InstrClk1,InstrClk2, InstrClk3;
 
         private void Timer_clockspeed1_Click(object sender, EventArgs e)
