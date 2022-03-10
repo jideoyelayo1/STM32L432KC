@@ -114,8 +114,18 @@ public partial class STM32 : Form
     }
     private void Input_TextBox_Click(object sender, EventArgs e)
     {
-        LookAtInputTextBox = true;
-        Run(InputBox.Text);
+        if (this.Input_TextBox.Text != "")
+        {
+            LookAtInputTextBox = true;
+            Run(InputBox.Text);
+        }else if(this.Input_TextBox.Text == "Invalid Input")
+        {
+            this.Input_TextBox.Text = "";
+        }
+        else
+        {
+            this.Input_TextBox.Text = "Invalid Input";
+        }
     }
     private void PB3_Click(object sender, EventArgs e)
     {
@@ -274,8 +284,8 @@ public partial class STM32 : Form
             else NextInstru = "";
             Update_Intr();
 
-
-            await Task.Delay(ClockSpeed* CycleTiming(lines[REG[15]]));
+            if(REG[15] < lines.Length)
+                await Task.Delay(ClockSpeed* CycleTiming(lines[REG[15]]));
         }
     }
     private async void Step(string fname)

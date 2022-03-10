@@ -20,13 +20,7 @@ namespace test1
             InitializeComponent();
             Startloading_Tim1();
         }
-        SfChart chart = new SfChart() { Header = "Chart" };
-        
 
-        private void LoadTimers_Click(object sender, EventArgs e)
-        {
-
-        }
         private async void Startloading_Tim1()
         {
             while (true)
@@ -85,7 +79,7 @@ namespace test1
                 {
                     var AddressToSearch = Convert.ToInt64(temp, 16);
                     if(AddressToSearch <= 0xffffffff)
-                    this.MemoryOutputTextBox.Text += "0x" + Convert.ToString(AddressToSearch, 16) + ": " + STM32.LoadMem(AddressToSearch) + "\n";
+                    this.MemoryOutputTextBox.Text += "0x" + Convert.ToString(AddressToSearch, 16) + ": " + Convert.ToString(STM32.LoadMem(AddressToSearch),16) + "\n";
                     else
                         this.MemoryTextInput.Text = "Invalid Input";
 
