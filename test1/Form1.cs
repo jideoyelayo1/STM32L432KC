@@ -1741,7 +1741,7 @@ public partial class STM32 : Form
             }
         }
         else if (line.Contains("IT"))
-        {
+        {/*
             // Z
             if (line.Contains("EQ")) xPSR[1] = true;
             if (line.Contains("NE")) xPSR[1] = false;
@@ -1781,7 +1781,7 @@ public partial class STM32 : Form
                 xPSR[1] = true;
                 xPSR[4] = !xPSR[2];
             }
-
+            */
 
         }
         else if (line.Contains("CLZ"))
@@ -2038,7 +2038,7 @@ public partial class STM32 : Form
     private uint TIM1_CCMR1;
     private uint TIM1_CCER;
     private uint TIM1_CCR1;
-    private uint Old_TIM1_CCR1;
+    private uint Old_TIM1_CCR1 = 0;
     private uint TIM1_BDTR;
     private uint TIM1_CR1;
     private uint TIM1_SR;
@@ -2052,12 +2052,11 @@ public partial class STM32 : Form
     }
     private void UpdatePWM()
     {
-        TIM1_CCR1 = Memory[0x40012c34 / 4];
+        TIM1_CCR1 = LoadMem(0x40012c34);
         if (TIM1_CCR1 != Old_TIM1_CCR1)
         {
             Old_TIM1_CCR1 = TIM1_CCR1;
-            RotatePWM();            
-
+            RotatePWM();
         }
     }
     private async void Run_TIM1()
@@ -2089,7 +2088,7 @@ public partial class STM32 : Form
 
     #region TIM7
 
-    // PWM Timer 7
+    //  Timer 7
     private uint TIM7_PSC;
     private uint TIM7_ARR;
     private uint TIM7_CNT = 0;
@@ -2133,7 +2132,7 @@ public partial class STM32 : Form
 
     #region TIM6
 
-    // PWM Timer 6
+    //  Timer 6
     private uint TIM6_PSC;
     private uint TIM6_ARR;
     private uint TIM6_CNT = 0;

@@ -685,7 +685,7 @@ partial class STM32
             bmp.RotateFlip(RotateFlipType.Rotate90FlipNone);
             this.PB6.BackColor = Color.Yellow;
         }
-        else
+        else if (PWM_Up == true)
         {
             PWM_Up = false;
             bmp.RotateFlip(RotateFlipType.Rotate270FlipNone);
