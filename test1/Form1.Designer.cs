@@ -101,7 +101,7 @@ partial class STM32
             // 
             // PA7
             // 
-            this.PA7.Location = new System.Drawing.Point(934, 209);
+            this.PA7.Location = new System.Drawing.Point(934, 243);
             this.PA7.Name = "PA7";
             this.PA7.Size = new System.Drawing.Size(66, 29);
             this.PA7.TabIndex = 1;
@@ -110,7 +110,7 @@ partial class STM32
             // 
             // PA6
             // 
-            this.PA6.Location = new System.Drawing.Point(934, 244);
+            this.PA6.Location = new System.Drawing.Point(934, 278);
             this.PA6.Name = "PA6";
             this.PA6.Size = new System.Drawing.Size(66, 29);
             this.PA6.TabIndex = 2;
@@ -119,7 +119,7 @@ partial class STM32
             // 
             // PA5
             // 
-            this.PA5.Location = new System.Drawing.Point(934, 279);
+            this.PA5.Location = new System.Drawing.Point(934, 313);
             this.PA5.Name = "PA5";
             this.PA5.Size = new System.Drawing.Size(66, 29);
             this.PA5.TabIndex = 3;
@@ -128,7 +128,7 @@ partial class STM32
             // 
             // PA4
             // 
-            this.PA4.Location = new System.Drawing.Point(934, 314);
+            this.PA4.Location = new System.Drawing.Point(934, 348);
             this.PA4.Name = "PA4";
             this.PA4.Size = new System.Drawing.Size(66, 29);
             this.PA4.TabIndex = 4;
@@ -137,7 +137,7 @@ partial class STM32
             // 
             // PA3
             // 
-            this.PA3.Location = new System.Drawing.Point(934, 349);
+            this.PA3.Location = new System.Drawing.Point(934, 383);
             this.PA3.Name = "PA3";
             this.PA3.Size = new System.Drawing.Size(66, 29);
             this.PA3.TabIndex = 5;
@@ -146,7 +146,7 @@ partial class STM32
             // 
             // PA1
             // 
-            this.PA1.Location = new System.Drawing.Point(934, 384);
+            this.PA1.Location = new System.Drawing.Point(934, 418);
             this.PA1.Name = "PA1";
             this.PA1.Size = new System.Drawing.Size(66, 29);
             this.PA1.TabIndex = 6;
@@ -155,7 +155,7 @@ partial class STM32
             // 
             // AREF
             // 
-            this.AREF.Location = new System.Drawing.Point(934, 454);
+            this.AREF.Location = new System.Drawing.Point(934, 488);
             this.AREF.Name = "AREF";
             this.AREF.Size = new System.Drawing.Size(66, 29);
             this.AREF.TabIndex = 7;
@@ -164,7 +164,7 @@ partial class STM32
             // 
             // GND0
             // 
-            this.GND0.Location = new System.Drawing.Point(934, 559);
+            this.GND0.Location = new System.Drawing.Point(934, 593);
             this.GND0.Name = "GND0";
             this.GND0.Size = new System.Drawing.Size(66, 29);
             this.GND0.TabIndex = 8;
@@ -173,7 +173,7 @@ partial class STM32
             // 
             // Volt3
             // 
-            this.Volt3.Location = new System.Drawing.Point(934, 489);
+            this.Volt3.Location = new System.Drawing.Point(934, 523);
             this.Volt3.Name = "Volt3";
             this.Volt3.Size = new System.Drawing.Size(66, 29);
             this.Volt3.TabIndex = 9;
@@ -182,7 +182,7 @@ partial class STM32
             // 
             // Volt5
             // 
-            this.Volt5.Location = new System.Drawing.Point(934, 174);
+            this.Volt5.Location = new System.Drawing.Point(934, 208);
             this.Volt5.Name = "Volt5";
             this.Volt5.Size = new System.Drawing.Size(66, 29);
             this.Volt5.TabIndex = 10;
@@ -191,7 +191,7 @@ partial class STM32
             // 
             // NRSTPin
             // 
-            this.NRSTPin.Location = new System.Drawing.Point(934, 139);
+            this.NRSTPin.Location = new System.Drawing.Point(934, 173);
             this.NRSTPin.Name = "NRSTPin";
             this.NRSTPin.Size = new System.Drawing.Size(66, 29);
             this.NRSTPin.TabIndex = 11;
@@ -200,7 +200,7 @@ partial class STM32
             // 
             // GNDPin
             // 
-            this.GNDPin.Location = new System.Drawing.Point(934, 104);
+            this.GNDPin.Location = new System.Drawing.Point(934, 138);
             this.GNDPin.Name = "GNDPin";
             this.GNDPin.Size = new System.Drawing.Size(66, 29);
             this.GNDPin.TabIndex = 12;
@@ -209,7 +209,7 @@ partial class STM32
             // 
             // VinPin
             // 
-            this.VinPin.Location = new System.Drawing.Point(934, 69);
+            this.VinPin.Location = new System.Drawing.Point(934, 103);
             this.VinPin.Name = "VinPin";
             this.VinPin.Size = new System.Drawing.Size(66, 29);
             this.VinPin.TabIndex = 13;
@@ -218,7 +218,7 @@ partial class STM32
             // 
             // PB3
             // 
-            this.PB3.Location = new System.Drawing.Point(934, 524);
+            this.PB3.Location = new System.Drawing.Point(934, 558);
             this.PB3.Name = "PB3";
             this.PB3.Size = new System.Drawing.Size(66, 29);
             this.PB3.TabIndex = 14;
@@ -228,7 +228,7 @@ partial class STM32
             // 
             // PA0
             // 
-            this.PA0.Location = new System.Drawing.Point(934, 419);
+            this.PA0.Location = new System.Drawing.Point(934, 453);
             this.PA0.Name = "PA0";
             this.PA0.Size = new System.Drawing.Size(66, 29);
             this.PA0.TabIndex = 15;
@@ -386,7 +386,7 @@ partial class STM32
             // 
             // PA2
             // 
-            this.PA2.Location = new System.Drawing.Point(979, 34);
+            this.PA2.Location = new System.Drawing.Point(934, 68);
             this.PA2.Name = "PA2";
             this.PA2.Size = new System.Drawing.Size(66, 29);
             this.PA2.TabIndex = 32;
@@ -567,10 +567,10 @@ partial class STM32
             // 
             // TIM1_textbox
             // 
-            this.TIM1_textbox.Location = new System.Drawing.Point(421, 540);
+            this.TIM1_textbox.Location = new System.Drawing.Point(459, 525);
             this.TIM1_textbox.Multiline = true;
             this.TIM1_textbox.Name = "TIM1_textbox";
-            this.TIM1_textbox.Size = new System.Drawing.Size(132, 152);
+            this.TIM1_textbox.Size = new System.Drawing.Size(72, 112);
             this.TIM1_textbox.TabIndex = 47;
             // 
             // STM32
@@ -641,29 +641,37 @@ partial class STM32
 
     #endregion
 
+    private string ExtendString(int zeroes)
+    {
+        var temp = "";
+        for(int i = 0; i < zeroes; i++)
+            temp+="0";
+        return temp;
+    }
+
     #region Update
     private void Update_Reg_txtBox()
     {
         //txtBox0
-        this.REG_txtBox0.Text = "R0: 0x" + Convert.ToString(REG[0], 16);
-        this.REG_txtBox0.Text += " R1: 0x" + Convert.ToString(REG[1], 16);
-        this.REG_txtBox0.Text += " R2: 0x" + Convert.ToString(REG[2], 16);
-        this.REG_txtBox0.Text += " R3: 0x" + Convert.ToString(REG[3], 16);
+        this.REG_txtBox0.Text  =  "R0: 0x" + ExtendString(8 - Convert.ToString(REG[0], 16).Length) + Convert.ToString(REG[0], 16);
+        this.REG_txtBox0.Text += " R1: 0x" + ExtendString(8 - Convert.ToString(REG[1], 16).Length) + Convert.ToString(REG[1], 16);
+        this.REG_txtBox0.Text += " R2: 0x" + ExtendString(8 - Convert.ToString(REG[2], 16).Length) + Convert.ToString(REG[2], 16);
+        this.REG_txtBox0.Text += " R3: 0x" + ExtendString(8 - Convert.ToString(REG[3], 16).Length) + Convert.ToString(REG[3], 16);
         //txtBox1
-        this.REG_txtBox1.Text = "R4: 0x" + Convert.ToString(REG[4], 16);
-        this.REG_txtBox1.Text += " R5: 0x" + Convert.ToString(REG[5], 16);
-        this.REG_txtBox1.Text += " R6: 0x" + Convert.ToString(REG[6], 16);
-        this.REG_txtBox1.Text += " R7: 0x" + Convert.ToString(REG[7], 16);
+        this.REG_txtBox1.Text  = " R4: 0x" + ExtendString(8 - Convert.ToString(REG[4], 16).Length) + Convert.ToString(REG[4], 16);
+        this.REG_txtBox1.Text += " R5: 0x" + ExtendString(8 - Convert.ToString(REG[5], 16).Length) + Convert.ToString(REG[5], 16);
+        this.REG_txtBox1.Text += " R6: 0x" + ExtendString(8 - Convert.ToString(REG[6], 16).Length) + Convert.ToString(REG[6], 16);
+        this.REG_txtBox1.Text += " R7: 0x" + ExtendString(8 - Convert.ToString(REG[7], 16).Length) + Convert.ToString(REG[7], 16);
         //txtBox2
-        this.REG_txtBox2.Text = "R8: 0x" + Convert.ToString(REG[8], 16);
-        this.REG_txtBox2.Text += " R9: 0x" + Convert.ToString(REG[9], 16);
-        this.REG_txtBox2.Text += " R10: 0x" + Convert.ToString(REG[10], 16);
-        this.REG_txtBox2.Text += " R11: 0x" + Convert.ToString(REG[11], 16);
-        //txtBox3
-        this.REG_txtBox3.Text = "R12: 0x" + Convert.ToString(REG[12], 16);
-        this.REG_txtBox3.Text += " R13: 0x" + Convert.ToString(REG[13], 16);
-        this.REG_txtBox3.Text += " R14: 0x" + Convert.ToString(REG[14], 16);
-        this.REG_txtBox3.Text += " R15: 0x" + Convert.ToString(REG[15], 16);
+        this.REG_txtBox2.Text  = " R8: 0x" + ExtendString(8 - Convert.ToString(REG[8], 16).Length) + Convert.ToString(REG[8], 16);
+        this.REG_txtBox2.Text += " R9: 0x" + ExtendString(8 - Convert.ToString(REG[9], 16).Length) + Convert.ToString(REG[9], 16);
+        this.REG_txtBox2.Text += " R10: 0x" + ExtendString(8 - Convert.ToString(REG[10], 16).Length) + Convert.ToString(REG[10], 16);
+        this.REG_txtBox2.Text += " R11: 0x" + ExtendString(8 - Convert.ToString(REG[11], 16).Length) + Convert.ToString(REG[11], 16);
+        //txtBox3 
+        this.REG_txtBox3.Text  =  "R12: 0x" + ExtendString(8 - Convert.ToString(REG[12], 16).Length) + Convert.ToString(REG[12], 16);
+        this.REG_txtBox3.Text += " R13: 0x" + ExtendString(8 - Convert.ToString(REG[13], 16).Length) + Convert.ToString(REG[13], 16);
+        this.REG_txtBox3.Text += " R14: 0x" + ExtendString(8 - Convert.ToString(REG[14], 16).Length) + Convert.ToString(REG[14], 16);
+        this.REG_txtBox3.Text += " R15: 0x" + ExtendString(8 - Convert.ToString(REG[15], 16).Length) + Convert.ToString(REG[15], 16);
     }
 
     private void Update_Next_Instr_textbox(string txt)

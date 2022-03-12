@@ -5,15 +5,16 @@ namespace test1;
 public partial class STM32 : Form
 {
     private static bool LookAtInputTextBox;
-    private static bool PB3_bool;
-    private static bool PB4_bool;
-    private static bool PB5_bool;
-    private static bool PB7_bool;
-    private static bool PB0_bool;
-    private static bool PB1_bool;
+    private static bool PB3_bool = false;
+    private static bool PB4_bool = false;
+    private static bool PB5_bool = false;
+    private static bool PB7_bool = false;
+    private static bool PB0_bool = false;
+    private static bool PB1_bool = false;
     public STM32()
     {
         InitializeComponent();
+        PC_FromKeil[0x08000346] = 0;
     }
 
     private void Load_file_Click(object sender, EventArgs e)
@@ -24,6 +25,7 @@ public partial class STM32 : Form
             LookAtInputTextBox = false;
             fileToRun = openFileDialog.FileName;
             Update_FileName_Textbox("File Loaded");
+            startingPC = 0;
         }
     }
 
@@ -134,7 +136,7 @@ public partial class STM32 : Form
             PB3_bool = true;
             PB3.BackColor = Color.Blue;
         }
-        else
+        else if (PB3_bool)
         {
             PB3_bool = false;
             PB3.BackColor = Color.Red;
@@ -147,7 +149,7 @@ public partial class STM32 : Form
             PB4_bool = true;
             PB4.BackColor = Color.Blue;
         }
-        else
+        else if(PB4_bool)
         {
             PB4_bool = false;
             PB4.BackColor = Color.Red;
@@ -160,7 +162,7 @@ public partial class STM32 : Form
             PB5_bool = true;
             PB5.BackColor = Color.Blue;
         }
-        else
+        else if (PB5_bool)
         {
             PB5_bool = false;
             PB5.BackColor = Color.Red;
@@ -173,7 +175,7 @@ public partial class STM32 : Form
             PB7_bool = true;
             PB7.BackColor = Color.Blue;
         }
-        else
+        else if (PB7_bool)
         {
             PB7_bool = false;
             PB7.BackColor = Color.Red;
@@ -186,7 +188,7 @@ public partial class STM32 : Form
             PB0_bool = true;
             PB0.BackColor = Color.Blue;
         }
-        else
+        else if (!PB0_bool)
         {
             PB0_bool = false;
             PB0.BackColor = Color.Red;
@@ -199,7 +201,7 @@ public partial class STM32 : Form
             PB1_bool = true;
             PB1.BackColor = Color.Blue;
         }
-        else
+        else if (PB1_bool)
         {
             PB1_bool = false;
             PB1.BackColor = Color.Red;
@@ -295,11 +297,26 @@ public partial class STM32 : Form
         SetUp(fname);
         REG[15] = startingPC;
         var yLen = lines.Length;
-        if (lines.Length > startingPC && lines[startingPC] != string.Empty)
+        if (lines.Length > startingPC && lines[REG[15]] != string.Empty)
         {
+            //Update varibles
             Update();
             UpdateButtons();
-            REG[15] = startingPC;
+
+            // Update Instruction TextBoxes
+            CurrInstru = lines[REG[15]];
+            if (REG[15] < yLen - 1) NextInstru = lines[REG[15] + 1];
+            else NextInstru = "";
+            Update_Intr();
+
+            //Run line actions
+            Running(lines[REG[15]]);
+            UpdatingOutputs();
+            REG[15]++;
+            startingPC = REG[15];
+            Update();
+            UpdateButtons();
+            UpdatingOutputs();
 
             // Update Instruction TextBoxes
             if (REG[15] < yLen) CurrInstru = lines[REG[15]];
@@ -307,14 +324,9 @@ public partial class STM32 : Form
             if (REG[15] < yLen - 1) NextInstru = lines[REG[15] + 1];
             else NextInstru = "";
             Update_Intr();
+            if (REG[15] < lines.Length)
+                await Task.Delay(1);
 
-            Running(lines[REG[15]]);
-            UpdatingOutputs();
-            REG[15]++;
-            startingPC = REG[15];
-            Update();
-            UpdateButtons();
-            await Task.Delay(ClockSpeed);
         }
 
 
@@ -359,7 +371,17 @@ public partial class STM32 : Form
 
 
         UpdateTimers();
-        
+
+        // N(negative) Z(zero) C(carry/borrow) V(overflow) Q(sticky saturation)
+        this.TIM1_textbox.Text = "\n\nFlags:\n\n     ";
+        if (xPSR[0]) this.TIM1_textbox.Text += "\n\nN:1\n\n     ";
+        else this.TIM1_textbox.Text += "\n\nN:0\n\n     ";
+        if (xPSR[1]) this.TIM1_textbox.Text += "\n\nZ:1\n\n     ";
+        else this.TIM1_textbox.Text += "\n\nZ:0\n\n     ";
+        if (xPSR[2]) this.TIM1_textbox.Text += "\n\nC:1\n\n     ";
+        else this.TIM1_textbox.Text += "\n\nC:0\n\n     ";
+        if (xPSR[3]) this.TIM1_textbox.Text += "\n\nV:1\n\n     ";
+        else this.TIM1_textbox.Text += "\n\nV:0\n\n          ";
     }
 
     public static string ODR_output = "0000000000000000";
@@ -378,7 +400,7 @@ public partial class STM32 : Form
         ODR = bitTrim(ODR, 16);
 
         if (AHB2ENR[^1] == '1')
-            for (var i = 0; i < ODR_out.Length; i++)
+            for (var i = 0; i < 16; i++)
             {
                 if (ODR[^1] == '1' && MODER[^2..] == "01" && PUPDR[^2..] == "10")
                     ODR_out = ReplaceAtIndex(ODR_out, i, '1');
@@ -392,7 +414,7 @@ public partial class STM32 : Form
 
         ODR_output = ODR_out;
     }
-    public static string B_IDR_Output = "0";
+    public static string B_IDR_Output = "0000000000000000";
     private static void UpdateButtons()
     {
 
@@ -412,8 +434,10 @@ public partial class STM32 : Form
         B_IDR += '0'; //PB6
         if (PB7_bool) B_IDR += '1'; //PB7
         else B_IDR += '0';
+        B_IDR += "00000000";
         B_IDR_Output = B_IDR;
         ODR_B_Buttons();
+
 
     }
     public static void ODR_B_Buttons()
@@ -422,7 +446,7 @@ public partial class STM32 : Form
         var AHB2ENR = Convert.ToString(LoadMem(0x4002104c), 2);
         var MODER = Convert.ToString(LoadMem(0x48000400), 2);
         var PUPDR = Convert.ToString(LoadMem(0x4800040c), 2);
-        var IDR = Convert.ToString(LoadMem(0x48000410), 2);
+        var IDR = B_IDR_Output;
 
         AHB2ENR = bitTrim(AHB2ENR, 32);
         MODER = bitTrim(MODER, 32);
@@ -432,7 +456,7 @@ public partial class STM32 : Form
         if (AHB2ENR[^2] == '1')
             for (var i = 0; i < IDR_out.Length; i++)
             {
-                if (IDR[^1] == '1' && MODER[^2..] == "00" && PUPDR[^2..] == "01")
+                if (IDR[^1] == '1' && MODER[^2..] == "00" && PUPDR[^2..] == "01"&& B_IDR_Output[^1] == '1')
                     IDR_out = ReplaceAtIndex(IDR_out, i, '1');
                 else
                     IDR_out = ReplaceAtIndex(IDR_out, i, '0');
@@ -443,9 +467,11 @@ public partial class STM32 : Form
 
 
         IDR_input = ReverseAString(IDR_out);
-        Memory[0x48000410/4] = (uint)(Convert.ToInt64(IDR_input, 16) & Convert.ToInt64(ReverseAString(B_IDR_Output), 16));
-        B_IDR_Output = "";
-        IDR_input = "";
+        var  temp = (uint)(Convert.ToInt64(B_IDR_Output, 2));
+        Memory[0x48000410 / 4] = temp;
+        
+
+        
     }
 
     public static string ReverseAString(string s)
@@ -1058,10 +1084,10 @@ public partial class STM32 : Form
         else if (line.Contains("CMP"))
         {
             // N(negative) Z(zero) C(carry/borrow) V(overflow) Q(sticky saturation)
-            uint CMPtemp = 0;
+            long CMPtemp = 0;
             var IdxOfFirstReg = line.IndexOf('r');
             var regNo1 = line[IdxOfFirstReg + 1];
-            temp = temp[(IdxOfFirstReg + 3)..];
+            temp = temp[(IdxOfFirstReg + 1)..];
 
             if (line.Contains("0x"))
             {
@@ -1069,7 +1095,7 @@ public partial class STM32 : Form
                 temp = temp[(valStartsHere + 1)..];
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
                 var val = Convert.ToInt64(temp, 16);
-                CMPtemp = (uint)(REG[charToInt(regNo1)] - val);
+                CMPtemp = (REG[charToInt(regNo1)] - val);
 
                 if (Convert.ToString(val, 2).Length == Convert.ToString(REG[charToInt(regNo1)] + val, 2).Length)
                     xPSR[2] = true;
@@ -1081,7 +1107,7 @@ public partial class STM32 : Form
                 var IdxOfSecondReg = temp.IndexOf('r');
                 var regNo2 = temp[IdxOfSecondReg + 1];
 
-                CMPtemp = REG[charToInt(regNo1)] - REG[charToInt(regNo2)];
+                CMPtemp = (int)(REG[charToInt(regNo1)] - REG[charToInt(regNo2)]);
 
                 if (Convert.ToString(REG[charToInt(regNo1)], 2).Length == Convert.ToString(REG[charToInt(regNo1)] + REG[charToInt(regNo2)], 2).Length)
                     xPSR[2] = true;
@@ -1288,13 +1314,7 @@ public partial class STM32 : Form
                 temp = temp[(valStartsHere + 1)..];
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
                 var val = Convert.ToInt64(temp, 16);
-                //Console.WriteLine("-------------------------------------------------------------------------------------------------------");
-                //Console.WriteLine("*****************************************************************************************************");
-
-                if (PC_FromKeil[val - 2] != 0)
-                    //Console.WriteLine("Before PC:{0}",REG[15]);
-                    REG[15] = PC_FromKeil[val - 2];
-                //Console.WriteLine("Before PC:{0}",REG[15]);
+                    REG[15] = PC_FromKeil[val];
             }
         }
         else if (line.Contains("BMI")) //Branch if PLus
@@ -1320,28 +1340,20 @@ public partial class STM32 : Form
                 temp = temp[(valStartsHere + 1)..];
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
                 var val = Convert.ToInt64(temp, 16);
-                if (PC_FromKeil[val] != 0)
-                    //Console.WriteLine("before change: {0}",REG[15]);
                     REG[15] = PC_FromKeil[val];
-                //Console.WriteLine("after change: {0}",REG[15]);
             }
         }
-        else if (line.Contains("BNE")) //Branch if PLus 
+        else if (line.Contains("BNE")) //Branch neative
         {
-            if (xPSR[0] == false)
+            if (xPSR[0] == true)
             {
                 var valStartsHere = temp.IndexOf('x');
                 temp = temp[(valStartsHere + 1)..];
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
                 var val = Convert.ToInt64(temp, 16);
-                if (PC_FromKeil[val] != 0)
+                
                     //Console.WriteLine("before change: {0}",REG[15]);
                     REG[15] = PC_FromKeil[val];
-                //Console.WriteLine("after change: {0}",REG[15]);
-                else if (PC_FromKeil[val - 2] != 0)
-                    //Console.WriteLine("before change: {0}",REG[15]);
-                    REG[15] = PC_FromKeil[val - 2];
-                //Console.WriteLine("after change: {0}",REG[15]);
             }
         }
         else if (line.Contains("PUSH"))
@@ -1830,7 +1842,7 @@ public partial class STM32 : Form
                 temp = string.Join("", temp.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
                 val = (uint)Convert.ToInt64(temp, 16);
 
-                if (PC_FromKeil[val] != 0)
+                
                     //Console.WriteLine("before change: {0}",REG[15]);
                     REG[15] = PC_FromKeil[val];
                 //Console.WriteLine("after change: {0}",REG[15]);
@@ -1854,114 +1866,117 @@ public partial class STM32 : Form
         PC_FromKeil[KeilPC] = REG[15]; // Translating Keil PC to my PC
         //Console.WriteLine("Cycle:{0} REG:{2} Line:{1} ",Convert.ToString(KeilPC,16),Instr_Line,REG[15]);
 
-        if (Instr_Line.Contains("JIDE")) KeilPC += 2;
-        //5 letters
-        else if (Instr_Line.Contains("ADR.W")) KeilPC += 4;
-        else if (Instr_Line.Contains("NOP.W")) KeilPC += 4;
+        if (Instr_Line == ""|| Instr_Line == "\n") KeilPC += 0;
         else if (Instr_Line.Contains("BEQ.W")) KeilPC += 4;
-        //4 letters
-        else if (Instr_Line.Contains("BL.W")) KeilPC += 4;
-        else if (Instr_Line.Contains("SUBS")) KeilPC += 2;
-        else if (Instr_Line.Contains("MOVS")) KeilPC += 2;
-        else if (Instr_Line.Contains("LSLS")) KeilPC += 2;
-        else if (Instr_Line.Contains("PUSH")) KeilPC += 4;
-        else if (Instr_Line.Contains("BKPT")) KeilPC += 2;
-        else if (Instr_Line.Contains("MOVW")) KeilPC += 4;
-        else if (Instr_Line.Contains("MOVT")) KeilPC += 4;
-        else if (Instr_Line.Contains("ANDS")) KeilPC += 2;
-        else if (Instr_Line.Contains("STRB")) KeilPC += 4;
-        else if (Instr_Line.Contains("LSRS")) KeilPC += 2;
-        else if (Instr_Line.Contains("LDRB")) KeilPC += 4;
-        else if (Instr_Line.Contains("CBNZ")) KeilPC += 2;
-        else if (Instr_Line.Contains("VMRS")) KeilPC += 4;
+        else if (Instr_Line.Contains("NOP.W")) KeilPC += 4;
+        else if (Instr_Line.Contains("ADR.W")) KeilPC += 4;
+        else if (Instr_Line.Contains("ADDS")) KeilPC += 2;
+        else if (Instr_Line.Contains("ASRS")) KeilPC += 2;
         else if (Instr_Line.Contains("VMSR")) KeilPC += 4;
-        //3 letters
-        else if (Instr_Line.Contains("DCW")) KeilPC += 2;
-        else if (Instr_Line.Contains("ADR")) KeilPC += 2;
-        else if (Instr_Line.Contains("LDM")) KeilPC += 4;
-        else if (Instr_Line.Contains("ADD")) KeilPC += 2;
-        else if (Instr_Line.Contains("SUB")) KeilPC += 2;
-        else if (Instr_Line.Contains("CMP")) KeilPC += 2;
-        else if (Instr_Line.Contains("BNE")) KeilPC += 2;
-        else if (Instr_Line.Contains("TST")) KeilPC += 4;
-        else if (Instr_Line.Contains("ORR")) KeilPC += 4;
-        else if (Instr_Line.Contains("STM")) KeilPC += 4;
-        else if (Instr_Line.Contains("BHI")) KeilPC += 2;
-        else if (Instr_Line.Contains("STR")) KeilPC += 2;
-        else if (Instr_Line.Contains("POP")) KeilPC += 4;
-        else if (Instr_Line.Contains("MOV")) KeilPC += 4;
-        else if (Instr_Line.Contains("LDR")) KeilPC += 2;
-        else if (Instr_Line.Contains("BLX")) KeilPC += 2;
-        else if (Instr_Line.Contains("BIC")) KeilPC += 4;
-        else if (Instr_Line.Contains("B.W")) KeilPC += 4;
-        else if (Instr_Line.Contains("BPL")) KeilPC += 2;
-        else if (Instr_Line.Contains("EOR")) KeilPC += 4;
-        else if (Instr_Line.Contains("AND")) KeilPC += 4;
-        else if (Instr_Line.Contains("BEQ")) KeilPC += 2;
-        else if (Instr_Line.Contains("CLZ")) KeilPC += 4;
-        else if (Instr_Line.Contains("CBZ")) KeilPC += 2;
+        else if (Instr_Line.Contains("VMRS")) KeilPC += 4;
+        else if (Instr_Line.Contains("CBNZ")) KeilPC += 2;
+        else if (Instr_Line.Contains("LDRB")) KeilPC += 4;
+        else if (Instr_Line.Contains("LSRS")) KeilPC += 2;
+        else if (Instr_Line.Contains("STRB")) KeilPC += 4;
+        else if (Instr_Line.Contains("ANDS")) KeilPC += 2;
+        else if (Instr_Line.Contains("MOVT")) KeilPC += 4;
+        else if (Instr_Line.Contains("MOVW")) KeilPC += 4;
+        else if (Instr_Line.Contains("BKPT")) KeilPC += 2;
+        else if (Instr_Line.Contains("PUSH")) KeilPC += 4;
+        else if (Instr_Line.Contains("LSLS")) KeilPC += 2;
+        else if (Instr_Line.Contains("MOVS")) KeilPC += 2;
+        else if (Instr_Line.Contains("SUBS")) KeilPC += 2;
+        else if (Instr_Line.Contains("BL.W")) KeilPC += 4;
+        else if (Instr_Line.Contains("ADD")) KeilPC += 4;
+        else if (Instr_Line.Contains("BCS")) KeilPC += 2;
+        else if (Instr_Line.Contains("CMP")) KeilPC += 4;
+        else if (Instr_Line.Contains("MLA")) KeilPC += 4;
         else if (Instr_Line.Contains("DCD")) KeilPC += 4;
-        //2 letters
-        else if (Instr_Line.Contains("IT")) KeilPC += 2;
+        else if (Instr_Line.Contains("CBZ")) KeilPC += 2;
+        else if (Instr_Line.Contains("CLZ")) KeilPC += 4;
+        else if (Instr_Line.Contains("BEQ")) KeilPC += 2;
+        else if (Instr_Line.Contains("AND")) KeilPC += 4;
+        else if (Instr_Line.Contains("EOR")) KeilPC += 4;
+        else if (Instr_Line.Contains("BPL")) KeilPC += 2;
+        else if (Instr_Line.Contains("B.W")) KeilPC += 4;
+        else if (Instr_Line.Contains("BIC")) KeilPC += 4;
+        else if (Instr_Line.Contains("BLX")) KeilPC += 2;
+        else if (Instr_Line.Contains("LDR")) KeilPC += 2;
+        else if (Instr_Line.Contains("MOV")) KeilPC += 4;
+        else if (Instr_Line.Contains("POP")) KeilPC += 4;
+        else if (Instr_Line.Contains("STR")) KeilPC += 2;
+        else if (Instr_Line.Contains("BHI")) KeilPC += 2;
+        else if (Instr_Line.Contains("STM")) KeilPC += 4;
+        else if (Instr_Line.Contains("ORR")) KeilPC += 4;
+        else if (Instr_Line.Contains("TST")) KeilPC += 4;
+        else if (Instr_Line.Contains("BNE")) KeilPC += 2;
+        else if (Instr_Line.Contains("CMP")) KeilPC += 2;
+        else if (Instr_Line.Contains("SUB")) KeilPC += 2;
+        else if (Instr_Line.Contains("ADD")) KeilPC += 2;
+        else if (Instr_Line.Contains("LDM")) KeilPC += 4;
+        else if (Instr_Line.Contains("ADR")) KeilPC += 2;
+        else if (Instr_Line.Contains("DCW")) KeilPC += 2;
         else if (Instr_Line.Contains("BX")) KeilPC += 2;
-        //1 letters
-        else if (Instr_Line.Contains("B")) KeilPC += 2;
+        else if (Instr_Line.Contains("IT")) KeilPC += 2;
+        else if (Instr_Line.Contains('B')) KeilPC += 2;
+        
 
     }
 
     private static int CycleTiming(string Instr_Line)
     {
-        if (Instr_Line.Contains("Jide")) return 1;
-        //5 letters
-        else if (Instr_Line.Contains("ADR.W")) return 4;
-        else if (Instr_Line.Contains("NOP.W")) return 4;
+        if (Instr_Line == "") return 1;
         else if (Instr_Line.Contains("BEQ.W")) return 4;
-        //4 letters
-        else if (Instr_Line.Contains("BL.W")) return 4;
-        else if (Instr_Line.Contains("SUBS")) return 2;
-        else if (Instr_Line.Contains("MOVS")) return 2;
-        else if (Instr_Line.Contains("LSLS")) return 2;
-        else if (Instr_Line.Contains("PUSH")) return 4;
-        else if (Instr_Line.Contains("BKPT")) return 2;
-        else if (Instr_Line.Contains("MOVW")) return 4;
-        else if (Instr_Line.Contains("MOVT")) return 4;
-        else if (Instr_Line.Contains("ANDS")) return 2;
-        else if (Instr_Line.Contains("STRB")) return 4;
-        else if (Instr_Line.Contains("LSRS")) return 2;
-        else if (Instr_Line.Contains("LDRB")) return 4;
-        else if (Instr_Line.Contains("CBNZ")) return 2;
-        else if (Instr_Line.Contains("VMRS")) return 4;
+        else if (Instr_Line.Contains("NOP.W")) return 4;
+        else if (Instr_Line.Contains("ADR.W")) return 4;
+        else if (Instr_Line.Contains("ADDS")) return 2;
+        else if (Instr_Line.Contains("ASRS")) return 2;
         else if (Instr_Line.Contains("VMSR")) return 4;
-        //3 letters
-        else if (Instr_Line.Contains("DCW")) return 2;
-        else if (Instr_Line.Contains("ADR")) return 2;
-        else if (Instr_Line.Contains("LDM")) return 4;
-        else if (Instr_Line.Contains("ADD")) return 2;
-        else if (Instr_Line.Contains("SUB")) return 2;
-        else if (Instr_Line.Contains("CMP")) return 2;
-        else if (Instr_Line.Contains("BNE")) return 2;
-        else if (Instr_Line.Contains("TST")) return 4;
-        else if (Instr_Line.Contains("ORR")) return 4;
-        else if (Instr_Line.Contains("STM")) return 4;
-        else if (Instr_Line.Contains("BHI")) return 2;
-        else if (Instr_Line.Contains("STR")) return 2;
-        else if (Instr_Line.Contains("POP")) return 4;
-        else if (Instr_Line.Contains("MOV")) return 4;
-        else if (Instr_Line.Contains("LDR")) return 2;
-        else if (Instr_Line.Contains("BLX")) return 2;
-        else if (Instr_Line.Contains("BIC")) return 4;
-        else if (Instr_Line.Contains("B.W")) return 4;
-        else if (Instr_Line.Contains("BPL")) return 2;
-        else if (Instr_Line.Contains("EOR")) return 4;
-        else if (Instr_Line.Contains("AND")) return 4;
-        else if (Instr_Line.Contains("BEQ")) return 2;
-        else if (Instr_Line.Contains("CLZ")) return 4;
-        else if (Instr_Line.Contains("CBZ")) return 2;
+        else if (Instr_Line.Contains("VMRS")) return 4;
+        else if (Instr_Line.Contains("CBNZ")) return 2;
+        else if (Instr_Line.Contains("LDRB")) return 4;
+        else if (Instr_Line.Contains("LSRS")) return 2;
+        else if (Instr_Line.Contains("STRB")) return 4;
+        else if (Instr_Line.Contains("ANDS")) return 2;
+        else if (Instr_Line.Contains("MOVT")) return 4;
+        else if (Instr_Line.Contains("MOVW")) return 4;
+        else if (Instr_Line.Contains("BKPT")) return 2;
+        else if (Instr_Line.Contains("PUSH")) return 4;
+        else if (Instr_Line.Contains("LSLS")) return 2;
+        else if (Instr_Line.Contains("MOVS")) return 2;
+        else if (Instr_Line.Contains("SUBS")) return 2;
+        else if (Instr_Line.Contains("BL.W")) return 4;
+        else if (Instr_Line.Contains("ADD")) return 4;
+        else if (Instr_Line.Contains("BCS")) return 2;
+        else if (Instr_Line.Contains("CMP")) return 4;
+        else if (Instr_Line.Contains("MLA")) return 4;
         else if (Instr_Line.Contains("DCD")) return 4;
-        //2 letters
-        else if (Instr_Line.Contains("IT")) return 2;
+        else if (Instr_Line.Contains("CBZ")) return 2;
+        else if (Instr_Line.Contains("CLZ")) return 4;
+        else if (Instr_Line.Contains("BEQ")) return 2;
+        else if (Instr_Line.Contains("AND")) return 4;
+        else if (Instr_Line.Contains("EOR")) return 4;
+        else if (Instr_Line.Contains("BPL")) return 2;
+        else if (Instr_Line.Contains("B.W")) return 4;
+        else if (Instr_Line.Contains("BIC")) return 4;
+        else if (Instr_Line.Contains("BLX")) return 2;
+        else if (Instr_Line.Contains("LDR")) return 2;
+        else if (Instr_Line.Contains("MOV")) return 4;
+        else if (Instr_Line.Contains("POP")) return 4;
+        else if (Instr_Line.Contains("STR")) return 2;
+        else if (Instr_Line.Contains("BHI")) return 2;
+        else if (Instr_Line.Contains("STM")) return 4;
+        else if (Instr_Line.Contains("ORR")) return 4;
+        else if (Instr_Line.Contains("TST")) return 4;
+        else if (Instr_Line.Contains("BNE")) return 2;
+        else if (Instr_Line.Contains("CMP")) return 2;
+        else if (Instr_Line.Contains("SUB")) return 2;
+        else if (Instr_Line.Contains("ADD")) return 2;
+        else if (Instr_Line.Contains("LDM")) return 4;
+        else if (Instr_Line.Contains("ADR")) return 2;
+        else if (Instr_Line.Contains("DCW")) return 2;
         else if (Instr_Line.Contains("BX")) return 2;
-        //1 letters
+        else if (Instr_Line.Contains("IT")) return 2;
         else if (Instr_Line.Contains("B")) return 2;
         return 1;
     }
@@ -1983,12 +1998,6 @@ public partial class STM32 : Form
             REG[15] = 0;
 
             #region MemorySetUp
-
-            // value, addr
-            for (var j = 0; j < 6; j++) // GPIOAs
-                for (var i = 0; i < 10; i++)
-                    if (i != 6)
-                        UpdateMem(0xABFFFFFF, 0x48000000 + 4 * i + j * 400);
 
             #endregion
 
@@ -2014,6 +2023,7 @@ public partial class STM32 : Form
 
     private void UpdateTimers()
     {
+        
         Update_TIM1();
         Update_TIM6();
         Update_TIM7();
@@ -2044,9 +2054,29 @@ public partial class STM32 : Form
     private uint TIM1_CCR1;
     private uint Old_TIM1_CCR1 = 0;
     private uint TIM1_BDTR;
-    private uint TIM1_CR1;
+    private static uint TIM1_CR1;
     private uint TIM1_SR;
 
+    public static string AreTheTimersOn()
+    {
+        string res = "";
+        if (TIM1_CR1 != 0) res += "1";
+        else res+= "0";
+        if (TIM2_CR1 != 0) res += "1";
+        else res += "0";
+        if (TIM3_CR1 != 0) res += "1";
+        else res += "0";
+        if (TIM6_CR1 != 0) res += "1";
+        else res += "0";
+        if (TIM7_CR1 != 0) res += "1";
+        else res += "0";
+        if (TIM15_CR1 != 0) res += "1";
+        else res += "0";
+        if (TIM16_CR1 != 0) res += "1";
+        else res += "0";
+        return res;
+
+    }
     private void Update_TIM1()
     {
         TIM1_PSC = Memory[0x40012c28/4];
@@ -2096,7 +2126,7 @@ public partial class STM32 : Form
     private uint TIM7_PSC;
     private uint TIM7_ARR;
     private uint TIM7_CNT = 0;
-    private uint TIM7_CR1;
+    private static uint TIM7_CR1;
     private uint TIM7_SR;
 
     private void Update_TIM7()
@@ -2123,8 +2153,10 @@ public partial class STM32 : Form
                         UpdateMem(TIM7_SR, 0x40014c10);
                         TIM7_CNT = 0;
                     }
+                    if(clockspeed *1000 > (int)( TIM7_PSC * clockspeed)&& (int)(TIM7_PSC * clockspeed) > 0)
                     await Task.Delay( (int)(TIM7_PSC * clockspeed) );
-
+                    else
+                        await Task.Delay(clockspeed);
                     TIM7_CNT++;
 
                 }
@@ -2140,7 +2172,7 @@ public partial class STM32 : Form
     private uint TIM6_PSC;
     private uint TIM6_ARR;
     private uint TIM6_CNT = 0;
-    private uint TIM6_CR1;
+    private static uint TIM6_CR1;
     private uint TIM6_SR;
 
     private void Update_TIM6()
@@ -2155,7 +2187,7 @@ public partial class STM32 : Form
         if (!TIM6_IsOn)
         {
             
-            if (TIM6_PSC != 0 && TIM6_ARR != 0 && TIM6_CR1 != 0)
+            if (TIM6_PSC > 0 && TIM6_ARR != 0 && TIM6_CR1 != 0)
             {TIM6_IsOn = true;
                 while (true)
                 {
@@ -2166,7 +2198,11 @@ public partial class STM32 : Form
                         UpdateMem(TIM6_SR, 0x40010c10);
                         TIM6_CNT = 0;
                     }
-                    await Task.Delay((int)(TIM6_PSC * clockspeed));
+                    var temp = (int)(TIM6_PSC * clockspeed);
+                    if(temp > 0)
+                    await Task.Delay(temp);
+                    else
+                        await Task.Delay(50);
 
                     TIM6_CNT++;
                 }
@@ -2187,7 +2223,7 @@ public partial class STM32 : Form
     private uint TIM16_CCR1;
     private uint Old_TIM16_CCR1;
     private uint TIM16_BDTR;
-    private uint TIM16_CR1;
+    private static uint TIM16_CR1;
     private uint TIM16_SR;
 
     private void Update_TIM16()
@@ -2239,7 +2275,7 @@ public partial class STM32 : Form
     private uint TIM15_CCR1;
     private uint Old_TIM15_CCR1;
     private uint TIM15_BDTR;
-    private uint TIM15_CR1;
+    private static uint TIM15_CR1;
     private uint TIM15_SR;
 
     private void Update_TIM15()
@@ -2289,7 +2325,7 @@ public partial class STM32 : Form
     private uint TIM3_CCR1;
     private uint Old_TIM3_CCR1;
     private uint TIM3_BDTR;
-    private uint TIM3_CR1;
+    private static uint TIM3_CR1;
     private uint TIM3_SR;
 
     private void Update_TIM3()
@@ -2341,7 +2377,7 @@ public partial class STM32 : Form
     private uint TIM2_CCR1;
     private uint Old_TIM2_CCR1;
     private uint TIM2_BDTR;
-    private uint TIM2_CR1;
+    private static uint TIM2_CR1;
     private uint TIM2_SR;
 
     

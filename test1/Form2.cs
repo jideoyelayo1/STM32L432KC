@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using Syncfusion.UI.Xaml.Charts;
 using System.Windows.Forms.DataVisualization;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace test1
 {
@@ -32,21 +33,42 @@ namespace test1
                 this.TIM1_textbox.Text += "\nTIM7: " + Convert.ToString(STM32.LoadMem(0x40014c10)) + "\n";
                 this.TIM1_textbox.Text += "\nTIM15: " + Convert.ToString(STM32.LoadMem(0x40014010)) + "\n";
                 this.TIM1_textbox.Text += "\nTIM16: " + Convert.ToString(STM32.LoadMem(0x40014410)) + "\n";
+                if (STM32.AreTheTimersOn()[0] == '1')
+                {
+                    if (STM32.LoadMem(0x40012c10) == 1) this.TIM_1_button.BackColor = Color.Green;//TIM1
+                    else this.TIM_1_button.BackColor = Color.DarkOrange;
+                }
 
-                if(STM32.LoadMem(0x40012c10) == 1) this.TIM_1_button.BackColor = Color.Green;//TIM1
-                else this.TIM_1_button.BackColor = Color.DarkOrange;
-                if (STM32.LoadMem(0x40000010) == 1) this.TIM_2_button.BackColor = Color.Green;//TIM2
-                else this.TIM_2_button.BackColor = Color.DarkOrange;
-                if (STM32.LoadMem(0x40000410) == 1) this.TIM_3_button.BackColor = Color.Green;//TIM3
-                else this.TIM_3_button.BackColor = Color.DarkOrange;
-                if (STM32.LoadMem(0x40010c10) == 1) this.TIM_6_button.BackColor = Color.Green;//TIM6
-                else this.TIM_6_button.BackColor = Color.DarkOrange;
-                if (STM32.LoadMem(0x40014c10) == 1) this.TIM_7_button.BackColor = Color.Green;//TIM7
-                else this.TIM_7_button.BackColor = Color.DarkOrange;
-                if (STM32.LoadMem(0x40014010) == 1) this.TIM_15_button.BackColor = Color.Green;//TIM15
-                else this.TIM_15_button.BackColor = Color.DarkOrange;
-                if (STM32.LoadMem(0x40014410) == 1) this.TIM_16_button.BackColor = Color.Green;//TIM16
-                else this.TIM_16_button.BackColor = Color.DarkOrange;
+                if (STM32.AreTheTimersOn()[1] == '1')
+                {
+                    if (STM32.LoadMem(0x40000010) == 1) this.TIM_2_button.BackColor = Color.Green;//TIM2
+                    else this.TIM_2_button.BackColor = Color.DarkOrange;
+                }
+                if (STM32.AreTheTimersOn()[2] == '1')
+                {
+                    if (STM32.LoadMem(0x40000410) == 1) this.TIM_3_button.BackColor = Color.Green;//TIM3
+                    else this.TIM_3_button.BackColor = Color.DarkOrange;
+                }
+                if (STM32.AreTheTimersOn()[3] == '1')
+                {
+                    if (STM32.LoadMem(0x40010c10) == 1) this.TIM_6_button.BackColor = Color.Green;//TIM6
+                    else this.TIM_6_button.BackColor = Color.DarkOrange;
+                }
+                if (STM32.AreTheTimersOn()[4] == '1')
+                {
+                    if (STM32.LoadMem(0x40014c10) == 1) this.TIM_7_button.BackColor = Color.Green;//TIM7
+                    else this.TIM_7_button.BackColor = Color.DarkOrange;
+                }
+                if (STM32.AreTheTimersOn()[5] == '1')
+                {
+                    if (STM32.LoadMem(0x40014010) == 1) this.TIM_15_button.BackColor = Color.Green;//TIM15
+                    else this.TIM_15_button.BackColor = Color.DarkOrange;
+                }
+                if (STM32.AreTheTimersOn()[6] == '1')
+                {
+                    if (STM32.LoadMem(0x40014410) == 1) this.TIM_16_button.BackColor = Color.Green;//TIM16
+                    else this.TIM_16_button.BackColor = Color.DarkOrange;
+                }
 
                 UpdateSpeeds();
                 await Task.Delay(20);
@@ -173,10 +195,17 @@ namespace test1
             {
                 output += temp[i] + "\n";
             }
+            for (int i = 0; i < 5; i++)
+            {
+                output = output.Replace("\n\n", "\n"); //remove empty lines
+            }
 
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
                 File.WriteAllText(saveFileDialog.FileName, output);
+            }
+
 
         }
 
