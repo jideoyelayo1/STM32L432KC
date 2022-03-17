@@ -493,7 +493,7 @@ partial class STM32
             // 
             // Restart_button
             // 
-            this.Restart_button.Location = new System.Drawing.Point(352, 12);
+            this.Restart_button.Location = new System.Drawing.Point(249, 12);
             this.Restart_button.Name = "Restart_button";
             this.Restart_button.Size = new System.Drawing.Size(66, 29);
             this.Restart_button.TabIndex = 40;
@@ -503,7 +503,7 @@ partial class STM32
             // 
             // Pause_Button
             // 
-            this.Pause_Button.Location = new System.Drawing.Point(437, 12);
+            this.Pause_Button.Location = new System.Drawing.Point(334, 12);
             this.Pause_Button.Name = "Pause_Button";
             this.Pause_Button.Size = new System.Drawing.Size(94, 29);
             this.Pause_Button.TabIndex = 41;
