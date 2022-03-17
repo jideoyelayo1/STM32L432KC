@@ -186,71 +186,71 @@ namespace test1
             // 
             // Instru_clockspeed3
             // 
-            this.Instru_clockspeed3.Location = new System.Drawing.Point(467, 413);
+            this.Instru_clockspeed3.Location = new System.Drawing.Point(440, 413);
             this.Instru_clockspeed3.Name = "Instru_clockspeed3";
-            this.Instru_clockspeed3.Size = new System.Drawing.Size(209, 29);
+            this.Instru_clockspeed3.Size = new System.Drawing.Size(236, 29);
             this.Instru_clockspeed3.TabIndex = 43;
-            this.Instru_clockspeed3.Text = "Instruction Clockspeed = 100";
+            this.Instru_clockspeed3.Text = "Instruction Clockspeed = 10Hz";
             this.Instru_clockspeed3.UseVisualStyleBackColor = true;
             this.Instru_clockspeed3.Click += new System.EventHandler(this.Instru_clockspeed3_Click);
             // 
             // Instru_clockspeed2
             // 
-            this.Instru_clockspeed2.Location = new System.Drawing.Point(467, 378);
+            this.Instru_clockspeed2.Location = new System.Drawing.Point(440, 378);
             this.Instru_clockspeed2.Name = "Instru_clockspeed2";
-            this.Instru_clockspeed2.Size = new System.Drawing.Size(209, 29);
+            this.Instru_clockspeed2.Size = new System.Drawing.Size(236, 29);
             this.Instru_clockspeed2.TabIndex = 42;
-            this.Instru_clockspeed2.Text = "Instruction Clockspeed = 50";
+            this.Instru_clockspeed2.Text = "Instruction Clockspeed = 20Hz";
             this.Instru_clockspeed2.UseVisualStyleBackColor = true;
             this.Instru_clockspeed2.Click += new System.EventHandler(this.Instru_clockspeed2_Click);
             // 
             // Instru_clockspeed1
             // 
-            this.Instru_clockspeed1.Location = new System.Drawing.Point(467, 343);
+            this.Instru_clockspeed1.Location = new System.Drawing.Point(440, 343);
             this.Instru_clockspeed1.Name = "Instru_clockspeed1";
-            this.Instru_clockspeed1.Size = new System.Drawing.Size(209, 29);
+            this.Instru_clockspeed1.Size = new System.Drawing.Size(236, 29);
             this.Instru_clockspeed1.TabIndex = 41;
-            this.Instru_clockspeed1.Text = "Instruction Clockspeed = 10";
+            this.Instru_clockspeed1.Text = "Instruction Clockspeed = 100Hz";
             this.Instru_clockspeed1.UseVisualStyleBackColor = true;
             this.Instru_clockspeed1.Click += new System.EventHandler(this.Instru_clockspeed1_Click);
             // 
             // Timer_clockspeed4
             // 
-            this.Timer_clockspeed4.Location = new System.Drawing.Point(467, 308);
+            this.Timer_clockspeed4.Location = new System.Drawing.Point(440, 308);
             this.Timer_clockspeed4.Name = "Timer_clockspeed4";
-            this.Timer_clockspeed4.Size = new System.Drawing.Size(209, 29);
+            this.Timer_clockspeed4.Size = new System.Drawing.Size(236, 29);
             this.Timer_clockspeed4.TabIndex = 40;
-            this.Timer_clockspeed4.Text = "Timer ClockSpeed = 200";
+            this.Timer_clockspeed4.Text = "Timer ClockSpeed = 5Hz";
             this.Timer_clockspeed4.UseVisualStyleBackColor = true;
             this.Timer_clockspeed4.Click += new System.EventHandler(this.Timer_clockspeed4_Click);
             // 
             // Timer_clockspeed3
             // 
-            this.Timer_clockspeed3.Location = new System.Drawing.Point(467, 273);
+            this.Timer_clockspeed3.Location = new System.Drawing.Point(440, 273);
             this.Timer_clockspeed3.Name = "Timer_clockspeed3";
-            this.Timer_clockspeed3.Size = new System.Drawing.Size(209, 29);
+            this.Timer_clockspeed3.Size = new System.Drawing.Size(236, 29);
             this.Timer_clockspeed3.TabIndex = 39;
-            this.Timer_clockspeed3.Text = "Timer Clockspeed = 100";
+            this.Timer_clockspeed3.Text = "Timer Clockspeed = 10Hz";
             this.Timer_clockspeed3.UseVisualStyleBackColor = true;
             this.Timer_clockspeed3.Click += new System.EventHandler(this.Timer_clockspeed3_Click);
             // 
             // Timer_clockspeed2
             // 
-            this.Timer_clockspeed2.Location = new System.Drawing.Point(467, 238);
+            this.Timer_clockspeed2.Location = new System.Drawing.Point(440, 238);
             this.Timer_clockspeed2.Name = "Timer_clockspeed2";
-            this.Timer_clockspeed2.Size = new System.Drawing.Size(209, 29);
+            this.Timer_clockspeed2.Size = new System.Drawing.Size(236, 29);
             this.Timer_clockspeed2.TabIndex = 38;
-            this.Timer_clockspeed2.Text = "Timer Clockspeed = 50";
+            this.Timer_clockspeed2.Text = "Timer Clockspeed = 20Hz";
             this.Timer_clockspeed2.UseVisualStyleBackColor = true;
             this.Timer_clockspeed2.Click += new System.EventHandler(this.Timer_clockspeed2_Click);
             // 
             // Timer_clockspeed1
             // 
-            this.Timer_clockspeed1.Location = new System.Drawing.Point(467, 203);
+            this.Timer_clockspeed1.Location = new System.Drawing.Point(440, 203);
             this.Timer_clockspeed1.Name = "Timer_clockspeed1";
-            this.Timer_clockspeed1.Size = new System.Drawing.Size(209, 29);
+            this.Timer_clockspeed1.Size = new System.Drawing.Size(236, 29);
             this.Timer_clockspeed1.TabIndex = 37;
-            this.Timer_clockspeed1.Text = "Timer ClockSpeed = 10";
+            this.Timer_clockspeed1.Text = "Timer ClockSpeed = 100Hz";
             this.Timer_clockspeed1.UseVisualStyleBackColor = true;
             this.Timer_clockspeed1.Click += new System.EventHandler(this.Timer_clockspeed1_Click);
             // 

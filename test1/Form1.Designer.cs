@@ -70,7 +70,6 @@ partial class STM32
             this.REG_txtBox2 = new System.Windows.Forms.TextBox();
             this.REG_txtBox1 = new System.Windows.Forms.TextBox();
             this.REG_txtBox0 = new System.Windows.Forms.TextBox();
-            this.Reset_Button = new System.Windows.Forms.Button();
             this.panel2 = new System.Windows.Forms.Panel();
             this.Current_Instr_textBox = new System.Windows.Forms.TextBox();
             this.Next_Instru_textBox = new System.Windows.Forms.TextBox();
@@ -459,16 +458,6 @@ partial class STM32
             this.REG_txtBox0.Size = new System.Drawing.Size(589, 27);
             this.REG_txtBox0.TabIndex = 37;
             // 
-            // Reset_Button
-            // 
-            this.Reset_Button.Location = new System.Drawing.Point(251, 12);
-            this.Reset_Button.Name = "Reset_Button";
-            this.Reset_Button.Size = new System.Drawing.Size(66, 29);
-            this.Reset_Button.TabIndex = 37;
-            this.Reset_Button.Text = "Reset";
-            this.Reset_Button.UseVisualStyleBackColor = true;
-            this.Reset_Button.Click += new System.EventHandler(this.Reset_Button_Click);
-            // 
             // panel2
             // 
             this.panel2.Controls.Add(this.Current_Instr_textBox);
@@ -587,7 +576,6 @@ partial class STM32
             this.Controls.Add(this.Restart_button);
             this.Controls.Add(this.Step_button);
             this.Controls.Add(this.panel2);
-            this.Controls.Add(this.Reset_Button);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.FileTextBox);
             this.Controls.Add(this.Load_file);
@@ -837,7 +825,6 @@ partial class STM32
     private TextBox REG_txtBox2;
     private TextBox REG_txtBox1;
     private TextBox REG_txtBox0;
-    private Button Reset_Button;
     private Panel panel2;
     private TextBox Current_Instr_textBox;
     private TextBox Next_Instru_textBox;
