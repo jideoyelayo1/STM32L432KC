@@ -697,14 +697,12 @@ partial class STM32
         this.FileTextBox.Text = txt;
         if(txt == "Please Wait clearing Memory")
         {
-            this.Reset_Button.BackColor = Color.Black;
         }else if(txt == "Running")
         {
             this.FileTextBox.BackColor = Color.Green;
 
         }
         else { 
-            this.Reset_Button.BackColor= Color.DarkGray;
             this.FileTextBox.BackColor = Color.LightGray;
         }
     }
