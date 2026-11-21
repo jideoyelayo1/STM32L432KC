@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net6.0-windows</TargetFramework>
+        <TargetFramework>net10.0-windows</TargetFramework>
         <Nullable>enable</Nullable>
         <UseWindowsForms>true</UseWindowsForms>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -10,9 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="HIC.System.Windows.Forms.DataVisualization" Version="1.0.1"/>
-        <PackageReference Include="Maikebing.System.Windows.Forms.DataVisualization" Version="5.0.1"/>
-        <PackageReference Include="Syncfusion.SfChart.WPF" Version="19.4.0.54"/>
+        <ProjectReference Include="../src/Stm32Emulator.Core/Stm32Emulator.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>

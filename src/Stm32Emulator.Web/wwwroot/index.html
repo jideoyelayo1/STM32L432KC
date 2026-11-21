@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0c1422" />
+  <meta name="description" content="Step through assembly, inspect registers, and explore GPIO and PWM in Jide Oyelayo's STM32 educational emulator." />
+  <base href="/demos/stm32/" />
+  <title>STM32 live lab · Jide Oyelayo</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div id="app"><main class="boot"><p class="eyebrow">JIDE OYELAYO / SYSTEMS</p><h1>Starting the STM32 lab</h1><p>Loading the emulator into your browser. The first visit downloads the .NET WebAssembly runtime.</p></main></div>
+  <div id="blazor-error-ui" role="alert">The emulator could not start or encountered an error. <a href="">Reload the lab</a> or <a href="https://github.com/jideoyelayo1/STM32L432KC">view the source</a>.</div>
+  <noscript>This interactive emulator requires JavaScript and WebAssembly. <a href="https://github.com/jideoyelayo1/STM32L432KC">Read the source and instructions on GitHub.</a></noscript>
+  <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+  <script>
+    Blazor.start().catch(() => { document.getElementById('blazor-error-ui').style.display = 'block'; });
+  </script>
+</body>
+</html>
