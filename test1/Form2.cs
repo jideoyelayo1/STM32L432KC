@@ -1,279 +1,50 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
+using Stm32Emulator.Core;
 
 namespace test1;
 
-public partial class TimerWindow : Form
+/// <summary>Inspector bound to the owner's live session; its UI timer is disposed with the window.</summary>
+public sealed class TimerWindow : Form
 {
-    private bool InstrClk1, InstrClk2, InstrClk3;
-    private bool TimClk1, TimClk2, TimClk3, TimClk4;
-    public TimerWindow()
-    {
-        InitializeComponent();
-        Startloading_Tim1();
-    }
+    private readonly Emulator emulator;
+    private readonly System.Windows.Forms.Timer refreshTimer = new() { Interval = 100 };
+    private readonly TextBox state = new() { Multiline = true, ReadOnly = true, Dock = DockStyle.Fill, Font = new Font(FontFamily.GenericMonospace, 11) };
 
-    private async void Startloading_Tim1()
+    public TimerWindow(Emulator emulator, Action<int> setPace)
     {
-        while (true)
+        this.emulator = emulator; Text = "Timer and memory inspector"; Size = new Size(650, 520);
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 4, ColumnCount = 1, Padding = new Padding(12) };
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 65));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));
+        var note = new Label { Text = "Educational model: TIM1 PWM1 channel 1 and TIM7 up-counter. One instruction = one simulated tick; no interrupt or hardware clock model.", Dock = DockStyle.Fill, AutoSize = true };
+        layout.Controls.Add(note, 0, 0);
+        var controls = new FlowLayoutPanel { Dock = DockStyle.Fill };
+        var address = new TextBox { Text = "0x20000000", Width = 150, AccessibleName = "Memory address" };
+        var read = new Button { Text = "Read word", AutoSize = true };
+        read.Click += (_, _) =>
         {
-            TIM1_textbox.Text = "TIM1: " + Convert.ToString(STM32.LoadMem(0x40012c10)) + "\n";
-            TIM1_textbox.Text += "\nTIM2: " + Convert.ToString(STM32.LoadMem(0x40000010)) + "\n";
-            TIM1_textbox.Text += "\nTIM3: " + Convert.ToString(STM32.LoadMem(0x40000410)) + "\n";
-            TIM1_textbox.Text += "\nTIM6: " + Convert.ToString(STM32.LoadMem(0x40010c10)) + "\n";
-            TIM1_textbox.Text += "\nTIM7: " + Convert.ToString(STM32.LoadMem(0x40014c10)) + "\n";
-            TIM1_textbox.Text += "\nTIM15: " + Convert.ToString(STM32.LoadMem(0x40014010)) + "\n";
-            TIM1_textbox.Text += "\nTIM16: " + Convert.ToString(STM32.LoadMem(0x40014410)) + "\n";
-            if (STM32.AreTheTimersOn()[0] == '1')
-            {
-                if (STM32.LoadMem(0x40012c10) == 1) TIM_1_button.BackColor = Color.Green; //TIM1
-                else TIM_1_button.BackColor = Color.DarkOrange;
-            }
-
-            if (STM32.AreTheTimersOn()[1] == '1')
-            {
-                if (STM32.LoadMem(0x40000010) == 1) TIM_2_button.BackColor = Color.Green; //TIM2
-                else TIM_2_button.BackColor = Color.DarkOrange;
-            }
-            if (STM32.AreTheTimersOn()[2] == '1')
-            {
-                if (STM32.LoadMem(0x40000410) == 1) TIM_3_button.BackColor = Color.Green; //TIM3
-                else TIM_3_button.BackColor = Color.DarkOrange;
-            }
-            if (STM32.AreTheTimersOn()[3] == '1')
-            {
-                if (STM32.LoadMem(0x40010c10) == 1) TIM_6_button.BackColor = Color.Green; //TIM6
-                else TIM_6_button.BackColor = Color.DarkOrange;
-            }
-            if (STM32.AreTheTimersOn()[4] == '1')
-            {
-                if (STM32.LoadMem(0x40014c10) == 1) TIM_7_button.BackColor = Color.Green; //TIM7
-                else TIM_7_button.BackColor = Color.DarkOrange;
-            }
-            if (STM32.AreTheTimersOn()[5] == '1')
-            {
-                if (STM32.LoadMem(0x40014010) == 1) TIM_15_button.BackColor = Color.Green; //TIM15
-                else TIM_15_button.BackColor = Color.DarkOrange;
-            }
-            if (STM32.AreTheTimersOn()[6] == '1')
-            {
-                if (STM32.LoadMem(0x40014410) == 1) TIM_16_button.BackColor = Color.Green; //TIM16
-                else TIM_16_button.BackColor = Color.DarkOrange;
-            }
-
-            UpdateSpeeds();
-            await Task.Delay(20);
-
-        }
-    }
-
-    private void Clear_Memory_box_Click(object sender, EventArgs e)
-    {
-        MemoryOutputTextBox.Text = "";
-    }
-
-    private void Load_This_Mem_Click(object sender, EventArgs e)
-    {
-        if (MemoryTextInput.Text.Count(x => x == 'x') == 1)
+            try { var location = AssemblyProgram.Number(address.Text); MessageBox.Show(this, $"0x{location:X8}: 0x{emulator.Memory.ReadWord(location):X8}", "Memory word"); }
+            catch (Exception error) when (error is FormatException or OverflowException or InvalidOperationException) { MessageBox.Show(this, error.Message, "Invalid memory address"); }
+        };
+        var pace = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 130, AccessibleName = "Execution pace" };
+        pace.Items.AddRange(["5 steps/s", "20 steps/s", "100 steps/s", "1,000 steps/s"]); pace.SelectedIndex = 1;
+        pace.SelectedIndexChanged += (_, _) => setPace(new[] { 5, 20, 100, 1000 }[pace.SelectedIndex]);
+        controls.Controls.AddRange([address, read, pace]); layout.Controls.Add(controls, 0, 1); layout.Controls.Add(state, 0, 2);
+        var source = new LinkLabel { Text = "Model documentation and source", Dock = DockStyle.Fill };
+        source.LinkClicked += (_, _) =>
         {
-            char[] AcceptableValues = { '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F' };
-            var NumOfAccVals = 0;
-            var temp = MemoryTextInput.Text;
-            var PosOfX = temp.IndexOf('x');
-            temp = temp[(PosOfX + 1)..];
-            temp = string.Concat(temp.Where(c => !char.IsWhiteSpace(c)));
-            foreach (var c in temp)
-                if (AcceptableValues.Contains(c))
-                    NumOfAccVals++;
-
-            if (NumOfAccVals == temp.Length)
-            {
-                var AddressToSearch = Convert.ToInt64(temp, 16);
-                if (AddressToSearch <= 0xffffffff)
-                    MemoryOutputTextBox.Text += "0x" + Convert.ToString(AddressToSearch, 16) + ": " + Convert.ToString(STM32.LoadMem(AddressToSearch), 16) + "\n";
-                else
-                    MemoryTextInput.Text = "Invalid Input";
-
-            }
-            else
-            {
-                MemoryTextInput.Text = "Invalid Input";
-            }
-
-
-        }
-        else if (MemoryTextInput.Text == "Invalid Input")
-        {
-            MemoryTextInput.Text = "";
-        }
-        else
-        {
-            MemoryTextInput.Text = "Invalid Input";
-        }
-
+            try { Process.Start(new ProcessStartInfo("https://github.com/jideoyelayo1/STM32L432KC/blob/main/docs/model.md") { UseShellExecute = true }); }
+            catch (System.ComponentModel.Win32Exception error) { MessageBox.Show(this, error.Message, "Could not open browser"); }
+        };
+        layout.Controls.Add(source, 0, 3); Controls.Add(layout);
+        refreshTimer.Tick += (_, _) => RefreshState(); refreshTimer.Start(); RefreshState();
     }
 
-    private void Timer_clockspeed3_Click(object sender, EventArgs e)
+    private void RefreshState()
     {
-        TimClk1 = false;
-        TimClk2 = false;
-        TimClk3 = true;
-        TimClk4 = false;
+        var bus = emulator.Memory;
+        state.Text = $"Simulated ticks: {bus.Ticks}\r\nPWM duty: {bus.PwmDuty:P0}\r\n\r\n" + string.Join("\r\n", new[] { ("TIM1", MemoryBus.Tim1), ("TIM7", MemoryBus.Tim7) }.Select(pair => $"{pair.Item1}: CR1={bus.ReadWord(pair.Item2):X8} PSC={bus.ReadWord(pair.Item2 + 40)} ARR={bus.ReadWord(pair.Item2 + 44)} CNT={bus.ReadWord(pair.Item2 + 36)} UIF={bus.ReadWord(pair.Item2 + 16)}"));
     }
-
-    private void Timer_clockspeed4_Click(object sender, EventArgs e)
-    {
-        TimClk1 = false;
-        TimClk2 = false;
-        TimClk3 = false;
-        TimClk4 = true;
-    }
-
-    private void Instru_clockspeed1_Click(object sender, EventArgs e)
-    {
-        InstrClk1 = true;
-        InstrClk2 = false;
-        InstrClk3 = false;
-    }
-
-    private void Instru_clockspeed2_Click(object sender, EventArgs e)
-    {
-        InstrClk1 = false;
-        InstrClk2 = true;
-        InstrClk3 = false;
-    }
-
-    private void Instru_clockspeed3_Click(object sender, EventArgs e)
-    {
-        InstrClk1 = false;
-        InstrClk2 = false;
-        InstrClk3 = true;
-    }
-
-    private void Timer_clockspeed2_Click(object sender, EventArgs e)
-    {
-        TimClk1 = false;
-        TimClk2 = true;
-        TimClk3 = false;
-        TimClk4 = false;
-    }
-
-    private void button1_Click(object sender, EventArgs e)
-    {
-        string fname = null;
-        var openFileDialog = new OpenFileDialog();
-        if (openFileDialog.ShowDialog() == DialogResult.OK)
-            fname = openFileDialog.FileName;
-        if (fname != null)
-            FixingfileText(fname);
-    }
-    private void FixingfileText(string fname)
-    {
-        var lines = File.ReadLines(fname).ToArray();
-        var temp = new string[lines.Length];
-
-        for (var i = 0; i < lines.Length; i++)
-            if (lines[i].Length > 21 && lines[i].Contains("0x080"))
-                temp[i] = lines[i][21..];
-        var output = "";
-        for (var i = 0; i < temp.Length; i++)
-            output += temp[i] + "\n";
-        for (var i = 0; i < 5; i++)
-            output = output.Replace("\n\n", "\n"); //remove empty lines
-
-        var saveFileDialog = new SaveFileDialog();
-        if (saveFileDialog.ShowDialog() == DialogResult.OK)
-            File.WriteAllText(saveFileDialog.FileName, output);
-
-
-    }
-
-    private void button2_Click(object sender, EventArgs e)
-    {
-        var url = "https://github.com/jideoyelayo1/STM32L432KC";
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = url,
-            UseShellExecute = true
-        });
-        button2.ForeColor = Color.Purple;
-
-    }
-
-    private void Timer_clockspeed1_Click(object sender, EventArgs e)
-    {
-        TimClk1 = true;
-        TimClk2 = false;
-        TimClk3 = false;
-        TimClk4 = false;
-
-    }
-
-    private void UpdateSpeeds()
-    {
-
-        #region Timer Clock
-
-        if (TimClk1)
-        {
-            STM32.clockspeed = 10;
-            Timer_clockspeed1.BackColor = Color.Aquamarine;
-            Timer_clockspeed2.BackColor = Color.White;
-            Timer_clockspeed3.BackColor = Color.White;
-            Timer_clockspeed4.BackColor = Color.White;
-        }
-        else if (TimClk2)
-        {
-            STM32.clockspeed = 50;
-            Timer_clockspeed1.BackColor = Color.White;
-            Timer_clockspeed2.BackColor = Color.Aquamarine;
-            Timer_clockspeed3.BackColor = Color.White;
-            Timer_clockspeed4.BackColor = Color.White;
-        }
-        else if (TimClk3)
-        {
-            STM32.clockspeed = 100;
-            Timer_clockspeed1.BackColor = Color.White;
-            Timer_clockspeed2.BackColor = Color.White;
-            Timer_clockspeed3.BackColor = Color.Aquamarine;
-            Timer_clockspeed4.BackColor = Color.White;
-        }
-        else if (TimClk4)
-        {
-            STM32.clockspeed = 200;
-            Timer_clockspeed1.BackColor = Color.White;
-            Timer_clockspeed2.BackColor = Color.White;
-            Timer_clockspeed3.BackColor = Color.White;
-            Timer_clockspeed4.BackColor = Color.Aquamarine;
-        }
-
-        #endregion
-
-        #region Instruction Clock
-
-        if (InstrClk1)
-        {
-            STM32.ClockSpeed = 10;
-            Instru_clockspeed1.BackColor = Color.Plum;
-            Instru_clockspeed2.BackColor = Color.White;
-            Instru_clockspeed3.BackColor = Color.White;
-        }
-        else if (InstrClk2)
-        {
-            STM32.ClockSpeed = 50;
-            Instru_clockspeed1.BackColor = Color.White;
-            Instru_clockspeed2.BackColor = Color.Plum;
-            Instru_clockspeed3.BackColor = Color.White;
-        }
-        else if (InstrClk3)
-        {
-            STM32.ClockSpeed = 100;
-            Instru_clockspeed1.BackColor = Color.White;
-            Instru_clockspeed2.BackColor = Color.White;
-            Instru_clockspeed3.BackColor = Color.Plum;
-        }
-
-        #endregion
-
-
-    }
+    protected override void Dispose(bool disposing)
+    { if (disposing) { refreshTimer.Stop(); refreshTimer.Dispose(); } base.Dispose(disposing); }
 }

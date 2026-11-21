@@ -1,0 +1,190 @@
+@implements IAsyncDisposable
+
+<PageTitle>STM32 live lab · Jide Oyelayo</PageTitle>
+<main class="lab">
+    <header class="masthead">
+        <a class="back" href="/work">Back to projects</a>
+        <a href="https://github.com/jideoyelayo1/STM32L432KC" target="_blank" rel="noopener noreferrer">View C# source</a>
+    </header>
+    <section class="intro" aria-labelledby="lab-title">
+        <div><p class="eyebrow">JIDE OYELAYO / SYSTEMS &amp; EMBEDDED</p><h1 id="lab-title">A microcontroller.<br /><span>No board required.</span></h1>
+            <p class="lede">Follow an instruction from the register file to a real change on the virtual board. Step slowly, then make it your own.</p></div>
+        <div class="scope-note"><span class="label">STM32L432KC · LIVE LAB</span><p>An educational assembly interpreter with selected GPIO and timer simulation. Runs locally in your browser.</p><a href="#reference">Supported instructions &amp; limits</a></div>
+    </section>
+
+    <section class="example-bar" aria-label="Example selection">
+        <label for="sample">Start with an example</label>
+        <select id="sample" value="@selectedId" @onchange="ChangeSample" disabled="@runner.IsRunning">
+            @foreach (var example in DemoPrograms.All) { <option value="@example.Id">@example.Title</option> }
+        </select>
+        <p>@Selected.Summary</p>
+    </section>
+
+    <div class="workspace">
+        <section class="panel editor-panel" aria-labelledby="source-title">
+            <div class="panel-heading"><h2 id="source-title">Assembly</h2><span class="pill">@(Dirty ? "Edited · load to apply" : "Loaded")</span></div>
+            <div class="transport">
+                <button class="primary" @onclick="Load" disabled="@runner.IsRunning">Load</button>
+                <button @onclick="Run" disabled="@(runner.IsRunning || Dirty || snapshot.Status is ExecutionStatus.Faulted or ExecutionStatus.Completed)">Run</button>
+                <button @onclick="Pause" disabled="@(!runner.IsRunning)">Pause</button>
+                <button @onclick="Step" disabled="@(runner.IsRunning || Dirty || snapshot.Status is ExecutionStatus.Faulted or ExecutionStatus.Completed)">Step</button>
+                <button @onclick="Reset">Reset</button>
+                <label class="speed-label" for="speed">Pace<select id="speed" @bind="speed" disabled="@runner.IsRunning"><option value="5">5 steps/s</option><option value="20">20 steps/s</option><option value="100">100 steps/s</option><option value="1000">1,000 steps/s</option></select></label>
+            </div>
+            <label class="sr-only" for="assembly">Assembly source code</label>
+            <textarea id="assembly" class="editor" spellcheck="false" autocapitalize="off" autocomplete="off" value="@source" @oninput="EditSource" disabled="@runner.IsRunning" maxlength="65536"></textarea>
+            @if (error is not null) { <p class="error" role="alert">@error</p> }
+            <div class="status" role="status" aria-live="polite"><strong>@StateLabel</strong><span>@StatusMessage</span></div>
+            <details class="execution" open><summary>Execution listing <span>next instruction highlighted</span></summary>
+                @if (emulator.Program is not null)
+                {
+                    <ol class="listing">
+                        @foreach (var instruction in emulator.Program.Instructions)
+                        {
+                            var active = !Dirty && instruction.Line == snapshot.SourceLine;
+                            <li class="@(active ? "current" : "")" aria-current="@(active ? "step" : null)"><span class="line-number">@instruction.Line</span><code>@instruction.Mnemonic @string.Join(", ", instruction.Operands)</code>@if (active) { <span class="current-tag">NEXT</span> }</li>
+                        }
+                    </ol>
+                }
+            </details>
+        </section>
+
+        <section class="panel board-panel" aria-labelledby="board-title">
+            <div class="panel-heading"><h2 id="board-title">Virtual board</h2><span class="label">GPIO / TIMERS</span></div>
+            <div class="board">
+                <div class="board-top"><span>NUCLEO-L432KC</span><span>EDUCATIONAL MODEL</span></div>
+                <div class="board-content">
+                    <div class="led-column">
+                        @foreach (var pin in new[] { 0, 1, 2, 3, 4, 5, 6, 7 })
+                        {
+                            var high = emulator.Memory.PinHigh('A', pin);
+                            <div class="pin"><span class="led @(high ? "on" : "")" aria-hidden="true"></span><span>@($"PA{pin}")</span><strong>@(high ? "HIGH" : "LOW")</strong></div>
+                        }
+                    </div>
+                    <div class="chip"><span class="chip-mark">ST</span><strong>STM32<br />L432KC</strong><span>CORTEX-M4</span><small>SIMULATED</small></div>
+                    <div class="board-inputs"><p class="label">DIGITAL INPUTS</p>
+                        @foreach (var pin in inputPins.Keys)
+                        {
+                            var capturedPin = pin;
+                            <button class="pin-button @(inputPins[pin] ? "active" : "")" aria-pressed="@(inputPins[pin] ? "true" : "false")" @onclick="() => Toggle(capturedPin)"><span>@($"PB{pin}")</span><strong>@(inputPins[pin] ? "HIGH" : "LOW")</strong></button>
+                        }
+                    </div>
+                </div>
+                <div class="board-bottom"><span>PA8 / TIM1_CH1 <strong>@(emulator.Memory.PinHigh('A', 8) ? "HIGH" : "LOW")</strong></span><span>1 STEP = 1 SIMULATED TICK</span></div>
+            </div>
+            <p class="caption">LEDs show digital pin states. PB buttons toggle virtual inputs; they can be used while the program runs. This is a teaching panel, not a physical board pinout.</p>
+            <div class="pwm-heading"><h3>PWM output</h3><strong>@emulator.Memory.PwmDuty.ToString("P0", CultureInfo.InvariantCulture)<small> duty cycle</small></strong></div>
+            <svg class="waveform" viewBox="0 0 420 76" role="img" aria-label="@($"TIM1 channel 1 configured duty cycle: {emulator.Memory.PwmDuty:P0}. Illustrative waveform, not a measured trace.")">
+                <path d="M0 16H420 M0 60H420" class="grid-line" /><polyline points="@WavePoints" />
+            </svg>
+            <div class="timer-readings"><span>TIM1 counter <strong>@Hex(emulator.Memory.ReadWord(MemoryBus.Tim1 + 36))</strong></span><span>TIM7 counter <strong>@Hex(emulator.Memory.ReadWord(MemoryBus.Tim7 + 36))</strong></span><span>TIM7 update flag <strong>@emulator.Memory.ReadWord(MemoryBus.Tim7 + 16)</strong></span></div>
+            <div class="expected"><span class="label">WHAT TO LOOK FOR</span><p>@Selected.Expected</p></div>
+        </section>
+
+        <section class="panel registers-panel" aria-labelledby="register-title">
+            <div class="panel-heading"><h2 id="register-title">Register file</h2><span class="label">32-BIT / HEX</span></div>
+            <dl class="registers">@for (var i = 0; i < 16; i++) { <div><dt>@RegisterLabel(i)</dt><dd>@Hex(snapshot.Registers[i])</dd></div> }</dl>
+            <div class="flags"><span class="label">FLAGS</span>@foreach (var flag in FlagValues) { <span class="flag @(flag.Value ? "set" : "")">@flag.Key <b>@(flag.Value ? "1" : "0")</b></span> }<span class="step-count">@snapshot.InstructionsExecuted.ToString("N0", CultureInfo.InvariantCulture) instructions · @snapshot.Ticks ticks</span></div>
+            <p class="caption">PC identifies a source instruction or an explicit listing address. Hardware pipeline offsets and exception behavior are not modeled.</p>
+        </section>
+
+        <section class="panel memory-panel" aria-labelledby="memory-title">
+            <div class="panel-heading"><h2 id="memory-title">Memory inspector</h2><span class="label">LITTLE ENDIAN</span></div>
+            <form class="memory-form" @onsubmit="InspectMemory" @onsubmit:preventDefault>
+                <label for="address">Start address</label><input id="address" @bind="addressText" placeholder="0x20000000" spellcheck="false" /><button type="submit">Inspect</button>
+            </form>
+            @if (memoryError is not null) { <p class="error" role="alert">@memoryError</p> }
+            <div class="memory-shortcuts"><button @onclick="() => InspectAt(MemoryBus.RamBase)">SRAM</button><button @onclick="() => InspectAt(MemoryBus.GpioA)">GPIOA</button><button @onclick="() => InspectAt(MemoryBus.Tim1)">TIM1</button></div>
+            <table class="memory-table"><caption class="sr-only">Eight four-byte words from the selected address</caption><thead><tr><th scope="col">Address</th><th scope="col">Word</th></tr></thead><tbody>
+                @for (uint i = 0; i < 8; i++) { var address = (ulong)memoryStart + i * 4; <tr><th scope="row">@($"0x{address:X8}")</th><td>@MemoryValue(address)</td></tr> }
+            </tbody></table>
+        </section>
+    </div>
+
+    <section id="reference" class="panel reference" aria-labelledby="reference-title"><h2 id="reference-title">A small, explicit instruction set.</h2><p>This lab interprets assembly text. It does not decode firmware binaries, model interrupts, or reproduce hardware timing. Every executed or conditionally skipped instruction advances one simulated tick. Pace changes playback speed, not the model.</p>
+        <div class="reference-grid"><div><h3>Supported operations</h3><dl>
+            <dt>Move &amp; memory</dt><dd>MOV, MOVS, MOVW, MOVT, LDR, STR, LDRB, STRB</dd>
+            <dt>Arithmetic &amp; logic</dt><dd>ADD/ADDS, SUB/SUBS, ADC/ADCS, CMP, AND, ORR, ORN, EOR, BIC, CLZ</dd>
+            <dt>Shifts</dt><dd>LSL/LSLS, LSR/LSRS, ASR/ASRS</dd>
+            <dt>Control flow</dt><dd>B, BX, BEQ, BNE, BPL, BMI, BGT, BLT, BLE, BGE, BHI, BLS, BCS, BCC, BVS, BVC, CBZ, CBNZ, IT/ITT/ITE blocks, NOP, BKPT</dd>
+            <dt>Status transfers</dt><dd>VMRS, VMSR (FPSCR/FPSID/FPEXC storage only; no floating-point execution)</dd>
+        </dl></div><div><h3>Syntax &amp; boundaries</h3><ul>
+            <li>Use R0–R15 or SP/LR/PC; decimal or 0x hexadecimal values; semicolon or // comments.</li>
+            <li>Memory forms: [register] or [register, offset]. Word accesses require alignment. Bytes can use any SRAM byte address.</li>
+            <li>Use labels for branches. Numeric targets require an explicit address on every instruction. .W is accepted as a listing annotation.</li>
+            <li>SRAM: 0x20000000–0x2000FFFF, modeled as one educational window. GPIOA/B, selected RCC registers, and TIM1/TIM7 only.</li>
+            <li>Timers: edge-aligned up-counting, immediate register updates, no interrupts. PWM1 channel 1 on TIM1/PA8. Unimplemented timer modes are outside this model.</li>
+            <li>PUSH, POP, data directives, binary firmware, and other peripherals are unsupported. Errors identify the source line.</li>
+            <li>64 KiB source, 2,000 instructions, automatic pause after 100,000 steps per Run. Edited text stays here when you Reset; keep a copy before leaving the page.</li>
+        </ul></div></div>
+        <p class="caption">Originally built to help Warwick engineering students learn without physical boards. The browser and Windows versions now share the repaired C# core. <a href="https://github.com/jideoyelayo1/STM32L432KC/blob/main/docs/model.md" target="_blank" rel="noopener noreferrer">Read the model and verification notes</a>.</p>
+    </section>
+    <footer class="footer"><span>JIDE OYELAYO · BUILT TO UNDERSTAND</span><a href="/work">Return to the portfolio</a></footer>
+</main>
+
+@code {
+    private readonly Emulator emulator = new();
+    private EmulatorRunner runner = null!;
+    private EmulatorSnapshot snapshot = null!;
+    private string selectedId = "leds", source = "", loadedSource = "";
+    private readonly Dictionary<string, string> drafts = [];
+    private readonly Dictionary<int, bool> inputPins = new() { [0] = false, [1] = false, [3] = false, [4] = false, [5] = false, [7] = false };
+    private string? error, memoryError;
+    private int speed = 20;
+    private string addressText = "0x20000000";
+    private uint memoryStart = MemoryBus.RamBase;
+    private bool disposed;
+    private DemoProgram Selected => DemoPrograms.All.First(x => x.Id == selectedId);
+    private bool Dirty => source != loadedSource;
+    private string StateLabel => Dirty ? "Source edited" : runner.IsRunning ? "Running" : snapshot.Status.ToString();
+    private string StatusMessage => Dirty ? "Load to validate and apply your changes." : runner.StopReason.Length > 0 ? runner.StopReason : runner.IsRunning ? "Watch the board, or Pause to inspect each instruction." : snapshot.Message;
+    private Dictionary<string, bool> FlagValues => new() { ["N"] = snapshot.Flags.N, ["Z"] = snapshot.Flags.Z, ["C"] = snapshot.Flags.C, ["V"] = snapshot.Flags.V };
+    private static string Hex(uint value) => $"0x{value:X8}";
+    private static string RegisterLabel(int i) => i switch { 13 => "R13 / SP", 14 => "R14 / LR", 15 => "R15 / PC", _ => $"R{i}" };
+
+    protected override void OnInitialized()
+    {
+        runner = new EmulatorRunner(emulator); source = Selected.Source; Load();
+    }
+    private void Refresh() { if (disposed) return; snapshot = emulator.Snapshot(); StateHasChanged(); }
+    private void Load()
+    {
+        if (runner.IsRunning) return;
+        try { emulator.LoadProgram(source); runner.ClearStopReason(); loadedSource = source; error = null; ClearInputs(); }
+        catch (AssemblyException exception) { error = exception.Message; }
+        snapshot = emulator.Snapshot();
+    }
+    private async Task ChangeSample(ChangeEventArgs args)
+    {
+        await runner.PauseAsync(); drafts[selectedId] = source;
+        selectedId = args.Value?.ToString() ?? "leds"; source = drafts.GetValueOrDefault(selectedId, Selected.Source); Load();
+    }
+    private void EditSource(ChangeEventArgs args) { source = args.Value?.ToString() ?? ""; error = null; }
+    private async Task Run() { if (!Dirty) await runner.RunAsync(speed, Refresh); }
+    private async Task Pause() { await runner.PauseAsync(); Refresh(); }
+    private void Step() { if (!runner.IsRunning && !Dirty) { emulator.Step(); Refresh(); } }
+    private async Task Reset() { await runner.PauseAsync(); emulator.Reset(); runner.ClearStopReason(); ClearInputs(); error = null; Refresh(); }
+    private void ClearInputs() { foreach (var pin in inputPins.Keys.ToArray()) inputPins[pin] = false; }
+    private void Toggle(int pin) { inputPins[pin] = !inputPins[pin]; emulator.Memory.SetInputPin('B', pin, inputPins[pin]); Refresh(); }
+    private void InspectMemory()
+    {
+        try { var value = AssemblyProgram.Number(addressText); if ((value & 3) != 0) throw new FormatException("Use a four-byte aligned address."); memoryStart = value; memoryError = null; }
+        catch (Exception exception) when (exception is FormatException or OverflowException) { memoryError = exception.Message; }
+    }
+    private void InspectAt(uint address) { addressText = Hex(address); InspectMemory(); }
+    private string MemoryValue(ulong address)
+    {
+        try { return address <= uint.MaxValue ? Hex(emulator.Memory.ReadWord((uint)address)) : "Outside 32-bit range"; }
+        catch (InvalidOperationException) { return "Unmapped"; }
+    }
+    private string WavePoints
+    {
+        get
+        {
+            if (!emulator.Memory.PwmEnabled) return "0,60 420,60";
+            var width = 140 * emulator.Memory.PwmDuty;
+            return string.Join(" ", Enumerable.Range(0, 3).SelectMany(i => new[] { $"{i * 140},60", $"{i * 140},16", $"{(i * 140 + width).ToString("0.##", CultureInfo.InvariantCulture)},16", $"{(i * 140 + width).ToString("0.##", CultureInfo.InvariantCulture)},60", $"{(i + 1) * 140},60" }));
+        }
+    }
+    public async ValueTask DisposeAsync() { disposed = true; await runner.DisposeAsync(); }
+}
