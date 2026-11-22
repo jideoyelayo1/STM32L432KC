@@ -14,7 +14,7 @@ public sealed class EmulatorRunner(Emulator emulator) : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(changed);
         if (IsRunning) return task!;
         if (instructionsPerSecond is < 1 or > 10_000) throw new ArgumentOutOfRangeException(nameof(instructionsPerSecond));
-        if (emulator.Program is null || emulator.Status is ExecutionStatus.Faulted or ExecutionStatus.Completed) return Task.CompletedTask;
+        if (emulator.Program is null || emulator.Status is ExecutionStatus.Faulted or ExecutionStatus.Completed or ExecutionStatus.Waiting) return Task.CompletedTask;
         cancellation = new CancellationTokenSource();
         StopReason = "";
         task = RunLoopAsync(instructionsPerSecond, changed, cancellation);
@@ -37,7 +37,7 @@ public sealed class EmulatorRunner(Emulator emulator) : IAsyncDisposable
                 for (var i = 0; i < count && !source.IsCancellationRequested; i++)
                 {
                     var snapshot = emulator.Step(); remaining--;
-                    if (snapshot.Status is ExecutionStatus.Completed or ExecutionStatus.Faulted || snapshot.Message == "Breakpoint reached.") return;
+                    if (snapshot.Status is ExecutionStatus.Completed or ExecutionStatus.Faulted or ExecutionStatus.Waiting || snapshot.Stop is ExecutionStop.Breakpoint or ExecutionStop.ServiceCall) return;
                 }
                 changed();
                 if (remaining == 0) { StopReason = "Paused after 100,000 instructions. Run again to continue."; return; }

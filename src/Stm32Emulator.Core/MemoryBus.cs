@@ -13,6 +13,8 @@ public sealed class MemoryBus
     public const uint Tim1 = 0x40012C00;
     public const uint Tim7 = 0x40001400;
     private readonly Dictionary<uint, byte> ram = [];
+    private readonly Dictionary<uint, byte> flash = [];
+    private (uint Address, int Width)? reservation;
     private readonly Dictionary<uint, uint> registers = [];
     private uint inputA, inputB;
     private uint prescaler1, prescaler7;
@@ -26,7 +28,7 @@ public sealed class MemoryBus
 
     public void Reset()
     {
-        ram.Clear(); registers.Clear(); inputA = inputB = prescaler1 = prescaler7 = 0; Ticks = 0;
+        ram.Clear(); flash.Clear(); reservation = null; registers.Clear(); inputA = inputB = prescaler1 = prescaler7 = 0; Ticks = 0;
         foreach (var address in new[] { RccAhb2Enr, RccApb1Enr1, RccApb2Enr }) registers[address] = 0;
         foreach (var port in new[] { GpioA, GpioB })
             foreach (var offset in GpioOffsets) registers[port + offset] = offset == 0 ? uint.MaxValue : 0;
@@ -35,6 +37,46 @@ public sealed class MemoryBus
                 registers[timer + offset] = offset == 44 ? 65535u : 0u;
     }
 
+    public void LoadData(IReadOnlyDictionary<uint, byte> image)
+    {
+        foreach (var (address, value) in image)
+            if (InRam(address)) { if (value != 0) ram[address] = value; }
+            else if (address >= AssemblyProgram.CodeBase && address - AssemblyProgram.CodeBase < AssemblyProgram.CodeSize) flash[address] = value;
+            else throw new InvalidOperationException("Initial data outside mapped memory.");
+    }
+    public void ClearExclusive() => reservation = null;
+    public void ReserveExclusive(uint address, int width)
+    { ValidateAccess(address, width, false, true); if (!InRam(address)) throw new InvalidOperationException("Exclusive accesses require SRAM."); reservation = (address, width); }
+    public bool ConsumeExclusive(uint address, int width)
+    { var success = reservation == (address, width); reservation = null; return success; }
+    private void Invalidate(uint address, int size)
+    { if (reservation is { } r && (ulong)address < (ulong)r.Address + (uint)r.Width && (ulong)r.Address < (ulong)address + (uint)size) reservation = null; }
+    public void ValidateAccess(uint address, int width, bool write, bool aligned = false)
+    {
+        if (width is not (1 or 2 or 4 or 8) || (ulong)address + (uint)width > 0x100000000UL) throw new InvalidOperationException("Invalid memory access extent.");
+        if (aligned && (address & (uint)(Math.Min(width, 4) - 1)) != 0) throw new InvalidOperationException("This access requires natural alignment.");
+        if (InRam(address)) { if ((ulong)address + (uint)width > RamBase + RamSize) throw new InvalidOperationException("Access crosses the SRAM boundary."); return; }
+        if (address >= AssemblyProgram.CodeBase && address - AssemblyProgram.CodeBase < AssemblyProgram.CodeSize)
+        {
+            if (write) throw new InvalidOperationException("Code/literal memory is read-only.");
+            for (var i = 0; i < width; i++) if (!flash.ContainsKey(address + (uint)i)) throw new InvalidOperationException("Instruction slots have no binary encoding; only declared data/literals can be read.");
+            return;
+        }
+        if ((address & (uint)(Math.Min(width, 4) - 1)) != 0) throw new InvalidOperationException("Peripheral access must be naturally aligned.");
+        for (var i = 0; i < width; i++)
+        {
+            var word = (address + (uint)i) & ~3u;
+            if (!registers.ContainsKey(word)) throw new InvalidOperationException($"Unmapped address 0x{address:X8}.");
+            if (write && Clocked(word) && (word == GpioA + 16 || word == GpioB + 16)) throw new InvalidOperationException("GPIO IDR is read-only.");
+        }
+    }
+    public ushort ReadHalf(uint address)
+    { ValidateAccess(address, 2, false); return (ushort)(ReadByte(address) | ReadByte(address + 1) << 8); }
+    public void WriteHalf(uint address, ushort value)
+    {
+        ValidateAccess(address, 2, true); if (InRam(address)) { WriteByte(address, (byte)value); WriteByte(address + 1, (byte)(value >> 8)); }
+        else { var aligned = address & ~3u; var shift = (int)(address & 3) * 8; WriteWord(aligned, ReadWord(aligned) & ~(65535u << shift) | (uint)value << shift); }
+    }
     private static bool InRam(uint address) => address >= RamBase && address - RamBase < RamSize;
     private static void Aligned(uint address)
     { if ((address & 3) != 0) throw new InvalidOperationException($"Word address 0x{address:X8} must be four-byte aligned. Use LDRB/STRB for bytes."); }
@@ -49,8 +91,8 @@ public sealed class MemoryBus
 
     public uint ReadWord(uint address)
     {
-        Aligned(address);
-        if (InRam(address)) return (uint)(ReadByte(address) | ReadByte(address + 1) << 8 | ReadByte(address + 2) << 16 | ReadByte(address + 3) << 24);
+        ValidateAccess(address, 4, false);
+        if (InRam(address) || flash.ContainsKey(address)) return (uint)(ReadByte(address) | ReadByte(address + 1) << 8 | ReadByte(address + 2) << 16 | ReadByte(address + 3) << 24);
         if (!registers.TryGetValue(address, out var value)) throw new InvalidOperationException($"Unmapped address 0x{address:X8}. Only SRAM and the documented GPIO/RCC/TIM registers are supported.");
         if (!Clocked(address)) return 0;
         if (address == GpioA + 16) return ReadPins(GpioA, inputA);
@@ -61,12 +103,15 @@ public sealed class MemoryBus
 
     public byte ReadByte(uint address)
     {
+        ValidateAccess(address, 1, false);
         if (InRam(address)) return ram.GetValueOrDefault(address);
+        if (flash.TryGetValue(address, out var value)) return value;
         return (byte)(ReadWord(address & ~3u) >> (int)((address & 3) * 8));
     }
 
     public void WriteByte(uint address, byte value)
     {
+        ValidateAccess(address, 1, true); Invalidate(address, 1);
         if (InRam(address)) { if (value == 0) ram.Remove(address); else ram[address] = value; return; }
         var aligned = address & ~3u;
         var shift = (int)((address & 3) * 8);
@@ -75,7 +120,7 @@ public sealed class MemoryBus
 
     public void WriteWord(uint address, uint value)
     {
-        Aligned(address);
+        ValidateAccess(address, 4, true); Invalidate(address, 4);
         if (InRam(address))
         {
             for (var i = 0; i < 4; i++) WriteByte(address + (uint)i, (byte)(value >> (8 * i)));
