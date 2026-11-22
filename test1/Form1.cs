@@ -83,7 +83,11 @@ public partial class STM32 : Form
     private void PB5_Click(object sender, EventArgs e) => Toggle(5);
     private void PB7_Click(object sender, EventArgs e) => Toggle(7);
     private void Toggle(int pin) { inputs[pin] = !inputs[pin]; emulator.Memory.SetInputPin('B', pin, inputs[pin]); RefreshView(); }
-    private void TimerOpenButton_Click(object sender, EventArgs e) => new TimerWindow(emulator, value => speed = value).Show(this);
+    private void TimerOpenButton_Click(object sender, EventArgs e) => new TimerWindow(emulator, value => speed = value, RefreshView, async example =>
+    {
+        if (InputBox.Text != loadedSource && MessageBox.Show(this, "Replace your edited source with this example?", "Unsaved source", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+        await runner.PauseAsync(); InputBox.Text = example.Source; LoadSource();
+    }).Show(this);
 
     private void RefreshView()
     {
@@ -93,13 +97,14 @@ public partial class STM32 : Form
         for (var group = 0; group < 4; group++) boxes[group].Text = string.Join("  ", Enumerable.Range(group * 4, 4).Select(i => $"R{i}: 0x{state.Registers[i]:X8}"));
         var current = emulator.Program is not null && state.InstructionIndex < emulator.Program.Instructions.Count ? emulator.Program.Instructions[state.InstructionIndex] : null;
         Current_Instr_textBox.Text = current is null ? "No next instruction" : $"Next (line {current.Line}): {current.Mnemonic} {string.Join(", ", current.Operands)}";
-        Next_Instru_textBox.Text = $"{state.InstructionsExecuted} instructions · {state.Ticks} simulated ticks · PC is source position";
+        Next_Instru_textBox.Text = $"{state.InstructionsExecuted} instructions · {state.Ticks} simulated ticks · PC and LR use code addresses";
         FileTextBox.Text = runner.IsRunning ? "Running" : runner.StopReason.Length > 0 ? runner.StopReason : state.Message;
         TIM1_textbox.Text = $"N:{Convert.ToInt32(state.Flags.N)} Z:{Convert.ToInt32(state.Flags.Z)} C:{Convert.ToInt32(state.Flags.C)} V:{Convert.ToInt32(state.Flags.V)}\r\nPWM: {emulator.Memory.PwmDuty:P0}";
         var outputs = new[] { PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PA8, PA9, PA10, PA11, PA12 };
         for (var pin = 0; pin < outputs.Length; pin++) outputs[pin].BackColor = emulator.Memory.PinHigh('A', pin) ? Color.LightGreen : Color.LightGray;
         foreach (var pair in new[] { (PB0, 0), (PB1, 1), (PB3, 3), (PB4, 4), (PB5, 5), (PB7, 7) }) pair.Item1.BackColor = inputs[pair.Item2] ? Color.LightBlue : Color.LightGray;
         StartButton.Enabled = Step_button.Enabled = Load_file.Enabled = Input_TextBox.Enabled = InputBox.Enabled = !runner.IsRunning;
+        StartButton.Enabled = Step_button.Enabled = !runner.IsRunning && state.Status is not (ExecutionStatus.Waiting or ExecutionStatus.Completed or ExecutionStatus.Faulted);
         Pause_Button.Enabled = runner.IsRunning; PWM.Invalidate();
     }
 

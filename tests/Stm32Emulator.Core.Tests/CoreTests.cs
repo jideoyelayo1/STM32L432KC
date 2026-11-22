@@ -68,7 +68,7 @@ public class CoreTests
 
     [Fact] public void BranchesDoNotSkipDestinationAndBxChangesPc()
     {
-        var cpu = Run("MOV r0,#4\nBX r0\nMOV r1,#99\nB end\nMOV r1,#7\nCBNZ r1,end\nMOV r1,#88\nend: BX lr");
+        var cpu = Run("LDR r0,=target\nBX r0\nMOV r1,#99\nB end\ntarget: MOV r1,#7\nCBNZ r1,end\nMOV r1,#88\nend: BX lr");
         Assert.Equal(7u, cpu.Snapshot().Registers[1]); Assert.Equal(ExecutionStatus.Completed, cpu.Status);
     }
 
@@ -98,12 +98,12 @@ public class CoreTests
     }
 
     [Theory]
-    [InlineData("PUSH {r0}")]
-    [InlineData("POP {r0}")]
-    [InlineData("DCW 0")]
+    [InlineData("PUSH {pc}")]
+    [InlineData("POP {sp}")]
+    [InlineData("DCD unknown")]
     [InlineData("MOV r16,#1")]
     [InlineData("MOVT r0,#0x10000")]
-    [InlineData("STR r0,[r1],#4")]
+    [InlineData("STR r0,[r1,#4]!,#4")]
     [InlineData("B missing")]
     [InlineData("IT EQ")]
     [InlineData("MOV r0,#0x100000000")]
@@ -125,7 +125,7 @@ public class CoreTests
     {
         var cpu = new Emulator(); cpu.LoadProgram("MOV r0,#0\nLDR r1,[r0]\nMOV r2,#99"); cpu.Step(); cpu.Step();
         Assert.Equal(ExecutionStatus.Faulted, cpu.Status); Assert.Contains("Line 2", cpu.Message); cpu.Step(); Assert.Equal(0u, cpu.Snapshot().Registers[2]);
-        Assert.Throws<InvalidOperationException>(() => cpu.Memory.ReadWord(MemoryBus.RamBase + 1));
+        Assert.Equal(0u, cpu.Memory.ReadWord(MemoryBus.RamBase + 1));
     }
 
     [Fact] public void SnapshotsAndSessionsAreIndependentAndResetIsComplete()

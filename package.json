@@ -1,0 +1,6 @@
+{
+  "name": "stm32-browser-verification",
+  "private": true,
+  "scripts": { "test:browser": "playwright test" },
+  "devDependencies": { "@playwright/test": "1.65.1" }
+}

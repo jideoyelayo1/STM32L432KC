@@ -4,3 +4,9 @@
 **/.idea/
 artifacts/
 .DS_Store
+
+# Reference generator caches
+__pycache__/
+
+node_modules/
+playwright-report/

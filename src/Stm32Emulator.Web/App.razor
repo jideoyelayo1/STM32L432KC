@@ -25,9 +25,9 @@
             <div class="panel-heading"><h2 id="source-title">Assembly</h2><span class="pill">@(Dirty ? "Edited · load to apply" : "Loaded")</span></div>
             <div class="transport">
                 <button class="primary" @onclick="Load" disabled="@runner.IsRunning">Load</button>
-                <button @onclick="Run" disabled="@(runner.IsRunning || Dirty || snapshot.Status is ExecutionStatus.Faulted or ExecutionStatus.Completed)">Run</button>
+                <button @onclick="Run" disabled="@(runner.IsRunning || Dirty || snapshot.Status is ExecutionStatus.Faulted or ExecutionStatus.Completed or ExecutionStatus.Waiting)">Run</button>
                 <button @onclick="Pause" disabled="@(!runner.IsRunning)">Pause</button>
-                <button @onclick="Step" disabled="@(runner.IsRunning || Dirty || snapshot.Status is ExecutionStatus.Faulted or ExecutionStatus.Completed)">Step</button>
+                <button @onclick="Step" disabled="@(runner.IsRunning || Dirty || snapshot.Status is ExecutionStatus.Faulted or ExecutionStatus.Completed or ExecutionStatus.Waiting)">Step</button>
                 <button @onclick="Reset">Reset</button>
                 <label class="speed-label" for="speed">Pace<select id="speed" @bind="speed" disabled="@runner.IsRunning"><option value="5">5 steps/s</option><option value="20">20 steps/s</option><option value="100">100 steps/s</option><option value="1000">1,000 steps/s</option></select></label>
             </div>
@@ -58,7 +58,7 @@
                         @foreach (var pin in new[] { 0, 1, 2, 3, 4, 5, 6, 7 })
                         {
                             var high = emulator.Memory.PinHigh('A', pin);
-                            <div class="pin"><span class="led @(high ? "on" : "")" aria-hidden="true"></span><span>@($"PA{pin}")</span><strong>@(high ? "HIGH" : "LOW")</strong></div>
+                            <div class="pin" role="img" aria-label="@($"PA{pin} {(high ? "HIGH" : "LOW")}")"><span class="led @(high ? "on" : "")" aria-hidden="true"></span><span>@($"PA{pin}")</span><strong>@(high ? "HIGH" : "LOW")</strong></div>
                         }
                     </div>
                     <div class="chip"><span class="chip-mark">ST</span><strong>STM32<br />L432KC</strong><span>CORTEX-M4</span><small>SIMULATED</small></div>
@@ -84,8 +84,26 @@
         <section class="panel registers-panel" aria-labelledby="register-title">
             <div class="panel-heading"><h2 id="register-title">Register file</h2><span class="label">32-BIT / HEX</span></div>
             <dl class="registers">@for (var i = 0; i < 16; i++) { <div><dt>@RegisterLabel(i)</dt><dd>@Hex(snapshot.Registers[i])</dd></div> }</dl>
-            <div class="flags"><span class="label">FLAGS</span>@foreach (var flag in FlagValues) { <span class="flag @(flag.Value ? "set" : "")">@flag.Key <b>@(flag.Value ? "1" : "0")</b></span> }<span class="step-count">@snapshot.InstructionsExecuted.ToString("N0", CultureInfo.InvariantCulture) instructions · @snapshot.Ticks ticks</span></div>
-            <p class="caption">PC identifies a source instruction or an explicit listing address. Hardware pipeline offsets and exception behavior are not modeled.</p>
+            <div class="flags"><span class="label">FLAGS</span>@foreach (var flag in FlagValues) { <span class="flag @(flag.Value ? "set" : "")">@flag.Key <b>@(flag.Value ? "1" : "0")</b></span> }<span class="flag">GE <b>@snapshot.Flags.Ge.ToString("X1")</b></span><span class="step-count">@snapshot.InstructionsExecuted.ToString("N0", CultureInfo.InvariantCulture) instructions · @snapshot.Ticks ticks</span></div>
+            <p class="caption">PC and LR contain code addresses. Reading PC uses the Thumb +4 rule; instruction widths control layout. Instructions remain parsed text, without binary encodings.</p>
+        </section>
+
+        <section class="panel processor-panel" aria-labelledby="processor-title">
+            <div class="panel-heading"><h2 id="processor-title">FPU &amp; system state</h2><span class="label">FPv4-SP-D16</span></div>
+            <details class="processor-details"><summary>Floating-point registers <span>S0–S31 · raw bits and F32</span></summary>
+                <p class="caption">Integer conversions store integer bits in S registers. D0–D15 alias pairs of S registers for transfers; double-precision arithmetic is unavailable.</p>
+                <dl class="registers floating-registers">
+                    @for (var i = 0; i < 32; i++) { <div><dt>@($"S{i}")</dt><dd>@Hex(snapshot.FloatingRegisters[i])<small>@FloatValue(snapshot.FloatingRegisters[i])</small></dd></div> }
+                </dl>
+                <p class="processor-reading"><strong>FPSCR</strong> <code>@Hex(snapshot.Fpscr)</code> · @RoundingLabel</p>
+                <p class="caption">IOC invalid · DZC divide by zero · OFC overflow · UFC underflow · IXC inexact · IDC input denormal. Exception flags are sticky until FPSCR is written or the lab is reset.</p>
+                <dl class="processor-values">@foreach (var flag in FloatingFlags) { <div><dt>@flag.Key</dt><dd>@flag.Value</dd></div> }</dl>
+            </details>
+            <details class="processor-details"><summary>System registers <span>stack pointers, masks and event state</span></summary>
+                <dl class="processor-values">@foreach (var value in SystemValues) { <div><dt>@value.Key</dt><dd>@value.Value</dd></div> }</dl>
+                <p class="caption">Service calls pause with their immediate value. Interrupt signals wake waits without running a handler. These controls are separate from the simulated GPIO inputs.</p>
+            </details>
+            <div class="wake-controls"><button @onclick="SendEvent">Signal event</button><button @onclick="SendInterrupt">Signal interrupt</button></div>
         </section>
 
         <section class="panel memory-panel" aria-labelledby="memory-title">
@@ -101,23 +119,21 @@
         </section>
     </div>
 
-    <section id="reference" class="panel reference" aria-labelledby="reference-title"><h2 id="reference-title">A small, explicit instruction set.</h2><p>This lab interprets assembly text. It does not decode firmware binaries, model interrupts, or reproduce hardware timing. Every executed or conditionally skipped instruction advances one simulated tick. Pace changes playback speed, not the model.</p>
-        <div class="reference-grid"><div><h3>Supported operations</h3><dl>
-            <dt>Move &amp; memory</dt><dd>MOV, MOVS, MOVW, MOVT, LDR, STR, LDRB, STRB</dd>
-            <dt>Arithmetic &amp; logic</dt><dd>ADD/ADDS, SUB/SUBS, ADC/ADCS, CMP, AND, ORR, ORN, EOR, BIC, CLZ</dd>
-            <dt>Shifts</dt><dd>LSL/LSLS, LSR/LSRS, ASR/ASRS</dd>
-            <dt>Control flow</dt><dd>B, BX, BEQ, BNE, BPL, BMI, BGT, BLT, BLE, BGE, BHI, BLS, BCS, BCC, BVS, BVC, CBZ, CBNZ, IT/ITT/ITE blocks, NOP, BKPT</dd>
-            <dt>Status transfers</dt><dd>VMRS, VMSR (FPSCR/FPSID/FPEXC storage only; no floating-point execution)</dd>
+    <section id="reference" class="panel reference" aria-labelledby="reference-title"><h2 id="reference-title">An explicit instruction model.</h2>
+        <p>This assembly-text lab supports @InstructionSet.All.Count canonical ARMv7E-M / FPv4-SP-D16 mnemonics, plus aliases, condition codes and flag-setting forms. It does not decode binaries, dispatch exception handlers, or reproduce hardware timing. Every executed or conditionally skipped instruction advances one simulated tick.</p>
+        <div class="reference-grid"><div><h3>Instruction families</h3><dl>
+            @foreach (var family in InstructionSet.All.GroupBy(operation => operation.Family))
+            { <dt>@family.Key</dt><dd>@string.Join(", ", family.Select(operation => operation.SetsFlags ? $"{operation.Name}/{operation.Name}S" : operation.Name))</dd> }
         </dl></div><div><h3>Syntax &amp; boundaries</h3><ul>
-            <li>Use R0–R15 or SP/LR/PC; decimal or 0x hexadecimal values; semicolon or // comments.</li>
-            <li>Memory forms: [register] or [register, offset]. Word accesses require alignment. Bytes can use any SRAM byte address.</li>
-            <li>Use labels for branches. Numeric targets require an explicit address on every instruction. .W is accepted as a listing annotation.</li>
-            <li>SRAM: 0x20000000–0x2000FFFF, modeled as one educational window. GPIOA/B, selected RCC registers, and TIM1/TIM7 only.</li>
-            <li>Timers: edge-aligned up-counting, immediate register updates, no interrupts. PWM1 channel 1 on TIM1/PA8. Unimplemented timer modes are outside this model.</li>
-            <li>PUSH, POP, data directives, binary firmware, and other peripherals are unsupported. Errors identify the source line.</li>
-            <li>64 KiB source, 2,000 instructions, automatic pause after 100,000 steps per Run. Edited text stays here when you Reset; keep a copy before leaving the page.</li>
+            <li>Use R0–R15 or SP/LR/PC; S0–S31 and D0–D15 for FPU transfers. Decimal, hexadecimal, labels, constants, semicolon and // comments are supported.</li>
+            <li>Memory operands include shifted register offsets, pre/post indexing and writeback. Register lists support ranges. Loads/stores validate mapped addresses and alignment.</li>
+            <li>Code begins at 0x08000000; SRAM spans 0x20000000–0x2000FFFF. Use labels for calls and branches. Explicit listings retain their addresses; numeric source-index branches must be migrated.</li>
+            <li>Data directives include .word/.hword/.byte, .float, .space, .align, .equ and .text/.data/.bss. LDR register,=value is a literal-load shorthand. Instruction slots do not contain encoded opcode bytes.</li>
+            <li>FPU operations use explicit rounding and FPSCR behavior, including NaNs, subnormals, conversions and fused operations. F64 arithmetic, NEON, and instructions from other ARM profiles are unsupported.</li>
+            <li>GPIOA/B, selected RCC registers and TIM1/TIM7 retain their teaching models. Timers do not dispatch interrupts; PWM illustrates configured duty.</li>
+            <li>64 KiB source, 2,000 instructions, and an automatic pause after 100,000 steps per Run. Reset restores initial data and clears machine state while retaining editor text.</li>
         </ul></div></div>
-        <p class="caption">Originally built to help Warwick engineering students learn without physical boards. The browser and Windows versions now share the repaired C# core. <a href="https://github.com/jideoyelayo1/STM32L432KC/blob/main/docs/model.md" target="_blank" rel="noopener noreferrer">Read the model and verification notes</a>.</p>
+        <p class="caption">Originally built to help Warwick engineering students learn without physical boards. Browser and Windows versions share the C# core. <a href="https://github.com/jideoyelayo1/STM32L432KC/blob/main/docs/model.md" target="_blank" rel="noopener noreferrer">Read the model, instruction catalogue and verification notes</a>.</p>
     </section>
     <footer class="footer"><span>JIDE OYELAYO · BUILT TO UNDERSTAND</span><a href="/work">Return to the portfolio</a></footer>
 </main>
@@ -138,7 +154,7 @@
     private bool Dirty => source != loadedSource;
     private string StateLabel => Dirty ? "Source edited" : runner.IsRunning ? "Running" : snapshot.Status.ToString();
     private string StatusMessage => Dirty ? "Load to validate and apply your changes." : runner.StopReason.Length > 0 ? runner.StopReason : runner.IsRunning ? "Watch the board, or Pause to inspect each instruction." : snapshot.Message;
-    private Dictionary<string, bool> FlagValues => new() { ["N"] = snapshot.Flags.N, ["Z"] = snapshot.Flags.Z, ["C"] = snapshot.Flags.C, ["V"] = snapshot.Flags.V };
+    private Dictionary<string, bool> FlagValues => new() { ["N"] = snapshot.Flags.N, ["Z"] = snapshot.Flags.Z, ["C"] = snapshot.Flags.C, ["V"] = snapshot.Flags.V, ["Q"] = snapshot.Flags.Q };
     private static string Hex(uint value) => $"0x{value:X8}";
     private static string RegisterLabel(int i) => i switch { 13 => "R13 / SP", 14 => "R14 / LR", 15 => "R15 / PC", _ => $"R{i}" };
 
@@ -177,6 +193,12 @@
         try { return address <= uint.MaxValue ? Hex(emulator.Memory.ReadWord((uint)address)) : "Outside 32-bit range"; }
         catch (InvalidOperationException) { return "Unmapped"; }
     }
+    private void SendEvent() { emulator.SignalEvent(); Refresh(); }
+    private void SendInterrupt() { emulator.SignalInterrupt(); Refresh(); }
+    private static string FloatValue(uint value) => BitConverter.UInt32BitsToSingle(value).ToString("G9", CultureInfo.InvariantCulture);
+    private string RoundingLabel => ((snapshot.Fpscr >> 22) & 3) switch { 0 => "nearest, ties to even", 1 => "toward +infinity", 2 => "toward -infinity", _ => "toward zero" };
+    private Dictionary<string, string> FloatingFlags => new[] { ("IOC",0),("DZC",1),("OFC",2),("UFC",3),("IXC",4),("IDC",7),("FZ",24),("DN",25),("AHP",26) }.ToDictionary(x => x.Item1, x => ((snapshot.Fpscr >> x.Item2) & 1).ToString());
+    private Dictionary<string, string> SystemValues => new() { ["MSP"] = Hex(snapshot.System.Msp), ["PSP"] = Hex(snapshot.System.Psp), ["PRIMASK"] = Hex(snapshot.System.Primask), ["BASEPRI"] = Hex(snapshot.System.Basepri), ["FAULTMASK"] = Hex(snapshot.System.Faultmask), ["CONTROL"] = Hex(snapshot.System.Control), ["Event pending"] = snapshot.System.EventPending ? "Yes" : "No", ["Interrupt pending"] = snapshot.System.InterruptPending ? "Yes" : "No" };
     private string WavePoints
     {
         get
