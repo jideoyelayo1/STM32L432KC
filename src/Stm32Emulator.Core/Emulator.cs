@@ -61,22 +61,36 @@ public sealed partial class Emulator
         if (r.Bank == 'S') { floating[r.Index] = value; return; }
         if (r.Bank != 'R') throw new FormatException("Expected integer/single register.");
         if (r.Index == 15) nextIndex = Program!.RegisterTarget(value);
-        else if (r.Index == 13) { if ((control & 2) == 0) msp = value; else psp = value; }
+        else if (r.Index == 13) { if ((control & 2) == 0) msp = value & ~3u; else psp = value & ~3u; }
         else registers[r.Index] = value;
     }
     internal ulong ReadDouble(RegisterOperand r) => floating[r.Index * 2] | (ulong)floating[r.Index * 2 + 1] << 32;
     internal void WriteDouble(RegisterOperand r, ulong v) { floating[r.Index * 2] = (uint)v; floating[r.Index * 2 + 1] = (uint)(v >> 32); }
-    public bool Condition(string c) => c switch
+    public bool Condition(string c) => c.ToUpperInvariant() switch
     {
-        "EQ" => Flags.Z, "NE" => !Flags.Z, "CS" or "HS" => Flags.C, "CC" or "LO" => !Flags.C, "MI" => Flags.N, "PL" => !Flags.N, "VS" => Flags.V, "VC" => !Flags.V,
-        "HI" => Flags.C && !Flags.Z, "LS" => !Flags.C || Flags.Z, "GE" => Flags.N == Flags.V, "LT" => Flags.N != Flags.V, "GT" => !Flags.Z && Flags.N == Flags.V, "LE" => Flags.Z || Flags.N != Flags.V, "AL" => true,
+        "EQ" => Flags.Z,
+        "NE" => !Flags.Z,
+        "CS" or "HS" => Flags.C,
+        "CC" or "LO" => !Flags.C,
+        "MI" => Flags.N,
+        "PL" => !Flags.N,
+        "VS" => Flags.V,
+        "VC" => !Flags.V,
+        "HI" => Flags.C && !Flags.Z,
+        "LS" => !Flags.C || Flags.Z,
+        "GE" => Flags.N == Flags.V,
+        "LT" => Flags.N != Flags.V,
+        "GT" => !Flags.Z && Flags.N == Flags.V,
+        "LE" => Flags.Z || Flags.N != Flags.V,
+        "AL" => true,
         _ => throw new FormatException("Unknown condition.")
     };
     private void Nz(uint v) => Flags = Flags with { N = (v & 0x80000000) != 0, Z = v == 0 };
     private uint Add(uint x, uint y, bool carry, bool update)
     {
         var wide = (ulong)x + y + (carry ? 1u : 0u); var signed = (long)(int)x + (int)y + (carry ? 1 : 0); var result = (uint)wide;
-        if (update) { Nz(result); Flags = Flags with { C = wide > uint.MaxValue, V = signed is > int.MaxValue or < int.MinValue }; } return result;
+        if (update) { Nz(result); Flags = Flags with { C = wide > uint.MaxValue, V = signed is > int.MaxValue or < int.MinValue }; }
+        return result;
     }
     private uint Shift(string kind, uint x, uint amount, out bool carry)
     {
@@ -100,7 +114,7 @@ public sealed partial class Emulator
         return (m.PostIndex ? b : updated, updated);
     }
     public void SignalEvent() { eventPending = true; if (Status == ExecutionStatus.Waiting && Stop == ExecutionStop.WaitForEvent) { eventPending = false; Wake(); } }
-    public void SignalInterrupt() { interruptPending = true; Memory.ClearExclusive(); if (Status == ExecutionStatus.Waiting) Wake(); }
+    public void SignalInterrupt() { interruptPending = true; Memory.ClearExclusive(); if (Status == ExecutionStatus.Waiting) { interruptPending = false; Wake(); } }
     private void Wake() { Status = ExecutionStatus.Paused; Stop = ExecutionStop.Step; Message = "Woken. Step or Run to continue."; }
     public EmulatorSnapshot Step()
     {
@@ -164,8 +178,13 @@ public sealed partial class Emulator
             case "SBC": valueResult = Add(left, ~right, Flags.C, flags); break;
             case "RSB": valueResult = Add(right, ~left, true, flags); break;
             case "LSL": case "LSR": case "ASR": case "ROR": valueResult = Shift(op, left, right, out var c); if (flags) { Nz(valueResult); Flags = Flags with { C = c }; } break;
-            case "AND": case "ORR": case "ORN": case "EOR": case "BIC":
-                valueResult = op switch { "AND" => left & right, "ORR" => left | right, "ORN" => left | ~right, "EOR" => left ^ right, _ => left & ~right }; if (flags) { Nz(valueResult); Flags = Flags with { C = shiftedCarry }; } break;
+            case "AND":
+            case "ORR":
+            case "ORN":
+            case "EOR":
+            case "BIC":
+                valueResult = op switch { "AND" => left & right, "ORR" => left | right, "ORN" => left | ~right, "EOR" => left ^ right, _ => left & ~right }; if (flags) { Nz(valueResult); Flags = Flags with { C = shiftedCarry }; }
+                break;
             default: throw new InvalidOperationException($"Instruction {op} has no execution implementation.");
         }
         Write(R(0), valueResult);
@@ -182,11 +201,14 @@ public sealed partial class Emulator
             case "SEV": SignalEvent(); return true;
             case "WFE": if (eventPending) eventPending = false; else { Status = ExecutionStatus.Waiting; Stop = ExecutionStop.WaitForEvent; Message = "Waiting for event. Signal an event to wake."; } return true;
             case "WFI": if (interruptPending) interruptPending = false; else { Status = ExecutionStatus.Waiting; Stop = ExecutionStop.WaitForInterrupt; Message = "Waiting for interrupt. Signal an interrupt to wake; no handler is dispatched."; } return true;
-            case "BKPT": case "SVC":
+            case "BKPT":
+            case "SVC":
                 Stop = op == "BKPT" ? ExecutionStop.Breakpoint : ExecutionStop.ServiceCall; TrapImmediate = a.Length == 0 ? 0 : Value(a[0]); Memory.ClearExclusive(); Message = op == "BKPT" ? "Breakpoint reached." : $"Service call #{TrapImmediate}. Step or Run to continue without dispatching a handler."; return true;
             case "UDF": Stop = ExecutionStop.UndefinedInstruction; TrapImmediate = a.Length == 0 ? 0 : Value(a[0]); throw new InvalidOperationException("Undefined instruction trap.");
-            case "CPSID": case "CPSIE":
-                if ((control & 1) == 0) { var mask = ((NamedOperand)a[0]).Name; if (mask.Contains('I')) primask = op == "CPSID" ? 1u : 0; if (mask.Contains('F')) faultmask = op == "CPSID" ? 1u : 0; } return true;
+            case "CPSID":
+            case "CPSIE":
+                if ((control & 1) == 0) { var mask = ((NamedOperand)a[0]).Name; if (mask.Contains('I')) primask = op == "CPSID" ? 1u : 0; if (mask.Contains('F')) faultmask = op == "CPSID" ? 1u : 0; }
+                return true;
             case "MRS": Write((RegisterOperand)a[0], ReadSystem(((NamedOperand)a[1]).Name)); return true;
             case "MSR": WriteSystem(((NamedOperand)a[0]).Name, Value(a[1])); return true;
             default: return false;
@@ -195,8 +217,14 @@ public sealed partial class Emulator
     private uint ReadSystem(string name) => name switch
     {
         "APSR" or "APSR_NZCVQG" or "APSR_NZCVQ" or "APSR_G" or "IAPSR" => Flags.Packed,
-        "XPSR" or "EAPSR" => Flags.Packed, "IPSR" or "EPSR" or "IEPSR" => 0,
-        "MSP" => (control & 1) == 0 ? msp : 0, "PSP" => (control & 1) == 0 ? psp : 0, "PRIMASK" => (control & 1) == 0 ? primask : 0, "BASEPRI" or "BASEPRI_MAX" => (control & 1) == 0 ? basepri : 0, "FAULTMASK" => (control & 1) == 0 ? faultmask : 0, "CONTROL" => control,
+        "XPSR" or "EAPSR" => Flags.Packed,
+        "IPSR" or "EPSR" or "IEPSR" => 0,
+        "MSP" => (control & 1) == 0 ? msp : 0,
+        "PSP" => (control & 1) == 0 ? psp : 0,
+        "PRIMASK" => (control & 1) == 0 ? primask : 0,
+        "BASEPRI" or "BASEPRI_MAX" => (control & 1) == 0 ? basepri : 0,
+        "FAULTMASK" => (control & 1) == 0 ? faultmask : 0,
+        "CONTROL" => control,
         _ => throw new FormatException("Unsupported special register.")
     };
     internal void SetApsr(uint v, bool nzcvq = true, bool ge = false)
@@ -207,8 +235,12 @@ public sealed partial class Emulator
         if ((control & 1) != 0) return;
         switch (name)
         {
-            case "MSP": msp = v & ~3u; break; case "PSP": psp = v & ~3u; break; case "PRIMASK": primask = v & 1; break; case "FAULTMASK": faultmask = v & 1; break;
-            case "BASEPRI": basepri = v & 255; break; case "BASEPRI_MAX": if ((v & 255) != 0 && (basepri == 0 || (v & 255) < basepri)) basepri = v & 255; break;
+            case "MSP": msp = v & ~3u; break;
+            case "PSP": psp = v & ~3u; break;
+            case "PRIMASK": primask = v & 1; break;
+            case "FAULTMASK": faultmask = v & 1; break;
+            case "BASEPRI": basepri = v & 255; break;
+            case "BASEPRI_MAX": if ((v & 255) != 0 && (basepri == 0 || (v & 255) < basepri)) basepri = v & 255; break;
             case "CONTROL": control = v & 7; break;
             default: throw new FormatException("Special register is read-only.");
         }

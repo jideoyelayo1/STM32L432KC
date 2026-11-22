@@ -13,7 +13,8 @@ internal static class FloatingPoint
         {
             Count(2); var s = op == "VMRS" ? 1 : 0;
             if (a[s] is not NamedOperand { Name: "FPSCR" }) throw new FormatException("Cortex-M4 status transfers use FPSCR.");
-            if (!(op == "VMRS" && a[0] is NamedOperand { Name: "APSR_NZCV" })) { if (Reg(1 - s, 'R').Index >= 13) throw new FormatException("Status transfers require R0–R12 or VMRS APSR_NZCV."); } return;
+            if (!(op == "VMRS" && a[0] is NamedOperand { Name: "APSR_NZCV" })) { if (Reg(1 - s, 'R').Index >= 13) throw new FormatException("Status transfers require R0–R12 or VMRS APSR_NZCV."); }
+            return;
         }
         if (op is "VLDR" or "VSTR")
         {
@@ -30,6 +31,7 @@ internal static class FloatingPoint
         }
         if (op == "VMOV")
         {
+            if (a.OfType<RegisterOperand>().Any(r => r.Bank == 'R' && r.Index >= 13)) throw new FormatException("VMOV core transfers require R0–R12.");
             Count(2, 3, 4);
             if (a.Length == 2)
             {
@@ -73,6 +75,7 @@ internal static class FloatingPoint
         if (op == "VMRS") { if (a[0] is NamedOperand) cpu.SetApsr(cpu.fpscr & 0xf0000000 | cpu.Flags.Packed & 0x08000000); else Put(cpu.fpscr); return; }
         if (op == "VMOV")
         {
+            if (a.OfType<RegisterOperand>().Any(r => r.Bank == 'R' && r.Index >= 13)) throw new FormatException("VMOV core transfers require R0–R12.");
             if (a.Length == 2)
             {
                 if (a[0] is LaneOperand dest) cpu.floating[dest.Register.Index * 2 + dest.Lane] = V(1);
@@ -88,7 +91,8 @@ internal static class FloatingPoint
         {
             var address = a[1] is ImmediateOperand literal ? literal.Value : cpu.Address((MemoryOperand)a[1]).Address; var width = R(0).Bank == 'D' ? 8 : 4; cpu.Memory.ValidateAccess(address, width, op == "VSTR", true);
             if (op == "VLDR") { var low = cpu.Memory.ReadWord(address); if (width == 8) cpu.WriteDouble(R(0), low | (ulong)cpu.Memory.ReadWord(address + 4) << 32); else Put(low); }
-            else { var value = width == 8 ? cpu.ReadDouble(R(0)) : V(0); if (width == 8) cpu.Memory.WriteWords(new[] { (address, (uint)value), (address + 4, (uint)(value >> 32)) }); else cpu.Memory.WriteWord(address, (uint)value); } return;
+            else { var value = width == 8 ? cpu.ReadDouble(R(0)) : V(0); if (width == 8) cpu.Memory.WriteWords(new[] { (address, (uint)value), (address + 4, (uint)(value >> 32)) }); else cpu.Memory.WriteWord(address, (uint)value); }
+            return;
         }
         if (op is "VLDM" or "VSTM" or "VLDMDB" or "VSTMDB" or "VPOP" or "VPUSH")
         {
@@ -116,7 +120,8 @@ internal static class FloatingPoint
         {
             var shift = op == "VCVTT" ? 16 : 0;
             if (types[0] == "F32") Put(SoftFloat32.FromHalf((ushort)(V(1) >> shift), ref cpu.fpscr));
-            else { var half = SoftFloat32.ToHalf(V(1), ref cpu.fpscr); Put(V(0) & ~(65535u << shift) | (uint)half << shift); } return;
+            else { var half = SoftFloat32.ToHalf(V(1), ref cpu.fpscr); Put(V(0) & ~(65535u << shift) | (uint)half << shift); }
+            return;
         }
         if (op is "VCMP" or "VCMPE") { SoftFloat32.Compare(V(0), V(1), op == "VCMPE", ref cpu.fpscr); return; }
         if (op == "VABS") { Put(V(1) & 0x7fffffff); return; }

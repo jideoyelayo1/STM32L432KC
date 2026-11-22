@@ -130,7 +130,7 @@ public static class DemoPrograms
             SADD16 r4,r0,r1
             SEL r5,r0,r1
             """),
-        new DemoProgram("float", "Inspect floating-point rounding", "Change FPSCR rounding and compare rounded conversions with exact fused arithmetic.",
+        new DemoProgram("float", "Inspect floating-point rounding", "Change FPSCR rounding and inspect floating-point and integer conversion results.",
             "S2 is 3.0. S3 contains the integer bits for 2 after rounding 1.5 upward; S4 contains 1 after rounding toward zero. Inspect FPSCR flags and raw bits.", """
             VMOV.F32 s0,#1.0
             VMOV.F32 s1,#2.0

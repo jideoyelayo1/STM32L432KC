@@ -34,7 +34,7 @@ public class ExpandedCoreTests
         var cpu=Run($"LDR r4,=values\nVLDR {bank.ToLower()}0,[r4]\nVSTR {bank.ToLower()}0,[r4,#{width}]\n.data\nvalues: .word 0x11223344,0x55667788,0,0");
         Assert.Equal(0x11223344u,cpu.Memory.ReadWord(MemoryBus.RamBase+(uint)width));if(width==8)Assert.Equal(0x55667788u,cpu.Memory.ReadWord(MemoryBus.RamBase+12));
     }
-    [Theory][InlineData("VLDM","VSTM",false)][InlineData("VLDMDB","VSTMDB",true)]
+    [Theory][InlineData("VLDM","VSTM",false)][InlineData("VLDMDB","VSTMDB",true)][InlineData("VLDMFD","VSTMEA",false)][InlineData("VLDMEA","VSTMFD",true)]
     public void FloatingMultipleTransfersAndWriteback(string load,string store,bool decrement)
     {
         var cpu=Run($"LDR r4,=values{(decrement?"+8":"")}\n{load} r4!,{{s0-s1}}\nLDR r4,=destination{(decrement?"+8":"")}\n{store} r4!,{{s0-s1}}\n.data\nvalues: .word 0x11223344,0x55667788\ndestination: .word 0,0");
@@ -42,6 +42,15 @@ public class ExpandedCoreTests
     }
     [Fact] public void FloatingScalarLanesAndLiteralData()
     {var cpu=Run("MOV r0,#0x11223344\nVMOV.32 d0[1],r0\nVMOV.32 r1,d0[1]\nVLDR s0,number\nB end\n.align 2\nnumber: .float 1.5\nend: NOP");Assert.Equal(0x11223344u,cpu.Snapshot().Registers[1]);Assert.Equal(0x3fc00000u,cpu.Snapshot().FloatingRegisters[0]);}
+    [Fact] public void AnInterruptSignalWakesExactlyOneWait()
+    {var cpu=Run("WFI\nWFI\nMOV r0,#7");cpu.SignalInterrupt();cpu.Step();Assert.Equal(ExecutionStatus.Waiting,cpu.Status);Assert.Equal(ExecutionStop.WaitForInterrupt,cpu.Stop);cpu.SignalInterrupt();cpu.Step();Assert.Equal(7u,cpu.Snapshot().Registers[0]);}
+    [Theory][InlineData("VADD.N.F32 s0,s1,s2")][InlineData("MOV.W.N r0,#1")][InlineData("ADD r0!,r1,r2")][InlineData("PUSH {r0!}")][InlineData("MULS r0,r1,r2")][InlineData("CBZ r8,end\nend: NOP")][InlineData("QADD r0,r1")][InlineData("UADD8 r0,r1")][InlineData("SEL r0,r1")][InlineData("PKHBT r0,r1")][InlineData("PKHTB r0,r1,r2,LSL #1")][InlineData("SSAT16 r0,#8,r1,LSL #1")]
+    public void MalformedWidthsAndRegisterFormsAreRejected(string source)
+    {Assert.Throws<AssemblyException>(()=>AssemblyProgram.Parse(source));}
+    [Fact] public void StackPointerWritesDiscardReservedAlignmentBits()
+    {var cpu=Run("LDR r0,=0x20000003\nMOV sp,r0\nMOV r1,sp");Assert.Equal(0x20000000u,cpu.Snapshot().Registers[1]);}
+    [Fact] public void AlwaysConditionSuffixesAndCaseInsensitiveConditionsAreAccepted()
+    {var cpu=Run("MOVSAL r0,#0\nADDAL r1,r0,#7\nBAL end\nMOV r1,#99\nend: NOP");Assert.Equal(7u,cpu.Snapshot().Registers[1]);Assert.True(cpu.Condition("eq"));}
     [Fact] public void CallsStackAndPopPcRestoreTheCaller()
     {
         var cpu=Run("MOV r0,#7\nBL outer\nB end\nouter: PUSH {lr}\nBL inner\nPOP {pc}\ninner: ADD r0,r0,#5\nBX lr\nend: NOP");

@@ -4,7 +4,7 @@ The committed JSON fixtures are generated independently of the C# interpreter. O
 
 - `generate-cpu-vectors.py`: 3,200 assembled integer, DSP and special-register cases executed by QEMU's Cortex-M4 on `mps2-an386`.
 - `generate-float-vectors.py`: 26,480 numerical cases from Berkeley SoftFloat 3e using the ARM-VFPv2 specialization and tininess before rounding. Covers all four ARM rounding directions, special values, conversions and fused arithmetic.
-- `generate-fpu-instruction-vectors.py`: 34,560 real FPv4-SP-D16 instruction cases executed by QEMU, including FPSCR rounding, default-NaN, flush-to-zero, alternative half precision, fixed-point conversions and negated operations.
+- `generate-fpu-instruction-vectors.py`: 50,688 real FPv4-SP-D16 instruction cases executed by QEMU, including FPSCR rounding, default-NaN, flush-to-zero, alternative half precision, fixed-point conversions and negated operations.
 
 Reference environment used for this revision: QEMU 11.1.3, Clang's `arm-none-eabi` assembler, Python 3 and a C99 compiler. The self-contained ELF harness needs no ARM linker or firmware toolchain. QEMU and SoftFloat are testing tools; neither is shipped with the browser or desktop application.
 

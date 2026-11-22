@@ -138,6 +138,7 @@ public sealed class AssemblyProgram
         {
             try
             {
+                if (i.Width == 2 && !InstructionSet.AllowsNarrow(i.Operation.Name)) throw new FormatException("Instruction does not have a narrow form.");
                 i.Arguments = program.ParseArguments(i);
                 InstructionValidation.Validate(i, program);
                 if (i.Operation.Name.StartsWith("IT", StringComparison.Ordinal)) { if (itSlots != 0) throw new FormatException("Nested IT block."); itSlots = i.Operation.Name.Length - 1; }
@@ -216,7 +217,7 @@ public sealed class AssemblyProgram
                 foreach (var part in text[1..^1].Split(','))
                 {
                     var range = part.Split('-'); var first = ParseRegister(range[0]); var last = range.Length == 2 ? ParseRegister(range[1]) : first;
-                    if (range.Length > 2 || first.Bank != last.Bank || first.Index > last.Index) throw new FormatException("Invalid register range.");
+                    if (first.Writeback || last.Writeback || range.Length > 2 || first.Bank != last.Bank || first.Index > last.Index) throw new FormatException("Invalid register range.");
                     for (var j = first.Index; j <= last.Index; j++) regs.Add(new(j, first.Bank));
                 }
                 if (regs.Count == 0 || regs.Distinct().Count() != regs.Count || regs.Select(r => r.Bank).Distinct().Count() != 1) throw new FormatException("Empty, duplicate, or mixed register list.");

@@ -4,7 +4,7 @@ An educational microcontroller lab originally built to help University of Warwic
 
 **[Open the browser lab](https://jideoyelayo.com/demos/stm32/)** · [Model, instruction reference and limitations](docs/model.md)
 
-The browser lab includes editable assembly, Run/Pause/Step/Reset controls, a 16-register view, N/Z/C/V flags, a memory inspector, virtual GPIO inputs and LEDs, and TIM1 PWM/TIM7 counter examples. Programs execute locally in the browser without a backend or account.
+The browser lab includes editable assembly, 229 canonical source mnemonics, Run/Pause/Step/Reset controls, integer/FPU/system inspectors, N/Z/C/V/Q/GE flags, a memory inspector, virtual GPIO inputs, and GPIO/PWM, function-call, DSP, floating-point and wait/wake examples. Programs execute locally in the browser without a backend or account.
 
 ## Run and build
 
@@ -33,16 +33,28 @@ The desktop starts with the LED program. Load text or a local assembly file, ste
 - `test1`: Windows Forms adapter using the same core.
 - `tests/Stm32Emulator.Core.Tests`: expected-state regression vectors and execution lifecycle tests.
 
-Repairs replace multi-gigabyte memory/address arrays, substring/register decoding, incorrect flags and byte accesses, broken branch/BX destinations, PB0's stuck toggle, and endless timer tasks. The browser examples cover LED writes, button-controlled output, and TIM1 PWM with TIM7 counting.
+Repairs replace multi-gigabyte memory/address arrays, substring/register decoding, incorrect flags and byte accesses, broken branch/BX destinations, PB0's stuck toggle, and endless timer tasks. The seven browser examples cover LEDs, buttons, timers/PWM, nested calls and stack restoration, DSP saturation, floating-point rounding, and explicit waits/service calls. The expanded core includes independent QEMU and Berkeley SoftFloat reference fixtures.
 
-## Scope
+## Scope and version 2 compatibility
 
-This is an **assembly-text interpreter with selected peripheral simulation**, not a complete or cycle-accurate Cortex-M4 emulator. It does not load firmware binaries, dispatch interrupts, execute floating-point arithmetic, or support every Thumb instruction/peripheral. Unsupported input produces an explicit source-line error. See [the model](docs/model.md) for precise syntax, register behavior, known simplifications and historical sample migration.
+This is an **assembly-text interpreter with selected peripheral simulation**. It implements the documented ARMv7E-M integer/DSP and FPv4-SP-D16 source profile, including architectural floating-point rounding and flags. It does not load firmware binaries, dispatch exception handlers, emulate every peripheral, or reproduce hardware timing. System instructions expose explicit traps and wait/wake state. Unsupported input produces a source-line error.
+
+PC/LR now use code addresses, and Reset restores initial data. Migrate numeric source-index branches to labels or code addresses. The v1 FPSID/FPEXC storage shortcuts are removed; status transfers use FPSCR. See [the model](docs/model.md) for precise syntax, register behavior, known simplifications and historical sample migration.
 
 Source is limited to 64 KiB / 2,000 instructions. Run pauses after 100,000 source instructions and can be resumed. All task state stays local to the browser; keep a copy of edited source before leaving the page.
 
 ## Release and portfolio integration
 
-CI tests the core, builds the browser output, and compiles the Windows adapter. A `demo-v*` tag publishes `stm32-browser.tar.gz` only after both jobs pass. The portfolio pins that GitHub release archive and its SHA-256, then installs it into `build/demos/stm32/`. Updating the demo requires a new release and an explicit portfolio manifest update; visitors do not fetch a changing branch at runtime.
+CI tests the core, builds the browser output, and compiles the Windows adapter. A `demo-v*` tag publishes `stm32-browser.tar.gz` only after both jobs pass. The portfolio pins that GitHub release archive and its SHA-256, then installs it into `dist/demos/stm32/`. Updating the demo requires a new release and an explicit portfolio manifest update; visitors do not fetch a changing branch at runtime.
 
 The original README and original sample programs remain available for historical context in [docs/original-readme.md](docs/original-readme.md), `testingLEDs.txt`, and `testingPWMandTimers.txt`. Historical claims of full instruction coverage or a packaged release are not current guarantees. No license terms are changed by this update.
+
+## Browser and independent-reference checks
+
+```sh
+npm ci
+npx playwright install chromium webkit
+npm run test:browser
+```
+
+Publish the browser output first, as above. The test runner starts its own loopback-only preview at the real `/demos/stm32` path. It checks desktop, 390px and 320px viewports in both engines. See [reference tooling](scripts/reference/README.md) for regenerating the 80,368 independent CPU/FPU cases, and [the instruction catalogue](docs/instruction-catalogue.md) for the exact supported mnemonic inventory. QEMU and SoftFloat are development-only reference tools and are not shipped with the application.

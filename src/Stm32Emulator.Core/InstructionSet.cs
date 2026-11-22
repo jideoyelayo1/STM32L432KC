@@ -13,6 +13,10 @@ public static class InstructionSet
     public static readonly string[] Conditions = ["EQ", "NE", "CS", "HS", "CC", "LO", "MI", "PL", "VS", "VC", "HI", "LS", "GE", "LT", "GT", "LE", "AL"];
     private static readonly HashSet<string> flaggable = new("ADC ADD AND ASR BIC EOR LSL LSR MOV MUL MVN ORN ORR ROR RRX RSB SBC SUB".Split(' '));
     private static readonly HashSet<string> narrowOnly = new("BKPT BX BLX CBZ CBNZ CPSID CPSIE IT SEV SVC WFE WFI YIELD".Split(' '));
+    private static readonly Dictionary<string, string> aliases = new() { ["ADDW"] = "ADD", ["SUBW"] = "SUB", ["LDMIA"] = "LDM", ["LDMFD"] = "LDM", ["LDMEA"] = "LDMDB", ["STMIA"] = "STM", ["STMEA"] = "STM", ["STMFD"] = "STMDB", ["VLDMIA"] = "VLDM", ["VSTMIA"] = "VSTM", ["VLDMFD"] = "VLDM", ["VLDMEA"] = "VLDMDB", ["VSTMEA"] = "VSTM", ["VSTMFD"] = "VSTMDB" };
+    private static readonly HashSet<string> narrow = new("ADC ADD ADR AND ASR B BIC BKPT BLX BX CBNZ CBZ CMN CMP CPSID CPSIE EOR IT LDM LDR LDRB LDRH LDRSB LDRSH LSL LSR MOV MUL MVN NOP ORR POP PUSH REV REV16 REVSH ROR RSB SBC SEV STM STR STRB STRH SUB SVC SXTB SXTH TST UDF UXTB UXTH WFE WFI YIELD".Split(' '));
+    internal static bool AllowsNarrow(string name) => narrow.Contains(name) || name.StartsWith("IT", StringComparison.Ordinal);
+    internal static string Family(string name) => operations[name].Family;
     static InstructionSet()
     {
         Add("Scalar", "ADC ADD ADR AND ASR BFC BFI BIC CLZ CMN CMP EOR LSL LSR MOV MOVT MOVW MVN ORN ORR RBIT REV REV16 REVSH ROR RRX RSB SBC SBFX SSAT SSAT16 SUB SXTB SXTB16 SXTH SXTAB SXTAB16 SXTAH TEQ TST UBFX USAT USAT16 UXTB UXTB16 UXTH UXTAB UXTAB16 UXTAH PKHBT PKHTB SEL");
@@ -35,11 +39,10 @@ public static class InstructionSet
         if (parts.Contains("W")) width = 4;
         if (parts.Contains("N")) { if (width != 0) throw new FormatException("Conflicting width suffixes."); width = 2; }
         if (Regex.IsMatch(name, "^IT[TE]{0,3}$")) { if (types.Length != 0 || width == 4) throw new FormatException("IT has only a narrow form without type suffixes."); return new(name, condition, false, [], 2); }
-        var aliases = new Dictionary<string, string> { ["ADDW"] = "ADD", ["SUBW"] = "SUB", ["LDMIA"] = "LDM", ["LDMFD"] = "LDM", ["LDMEA"] = "LDMDB", ["STMIA"] = "STM", ["STMEA"] = "STM", ["STMFD"] = "STMDB", ["VLDMIA"] = "VLDM", ["VSTMIA"] = "VSTM", ["VSTMDB"] = "VSTMDB", ["VLDMDB"] = "VLDMDB" };
         // Prefer a complete name: TEQ, SMLALS, etc. must not lose a condition by accident.
         if (!operations.ContainsKey(name) && !aliases.ContainsKey(name))
         {
-            foreach (var cond in Conditions.Where(c => c != "AL"))
+            foreach (var cond in Conditions)
                 if (name.EndsWith(cond, StringComparison.Ordinal))
                 {
                     var stem = name[..^2];
@@ -49,12 +52,12 @@ public static class InstructionSet
             if (name.EndsWith('S') && flaggable.Contains(name[..^1])) { flags = true; name = name[..^1]; }
         }
         if (aliases.TryGetValue(name, out var canonical)) name = canonical;
-        if (name is "VSTMDB" or "VLDMDB") { }
-        else if (!operations.ContainsKey(name)) throw new FormatException($"Unsupported instruction '{text}'. Expected an ARMv7E-M or FPv4-SP-D16 instruction.");
+        if (!operations.ContainsKey(name)) throw new FormatException($"Unsupported instruction '{text}'. Expected an ARMv7E-M or FPv4-SP-D16 instruction.");
         if (types.Length > 0 && !name.StartsWith('V')) throw new FormatException("Only floating-point instructions accept type suffixes.");
         if (types.Any(t => t is not ("F32" or "F64" or "F16" or "S32" or "U32" or "S16" or "U16" or "32" or "64"))) throw new FormatException("Unsupported floating-point type; double-precision arithmetic is not available on Cortex-M4.");
         if (types.Contains("F64") && name is not ("VLDR" or "VSTR" or "VLDM" or "VSTM" or "VLDMDB" or "VSTMDB" or "VPUSH" or "VPOP")) throw new FormatException("Double-precision arithmetic is unavailable on Cortex-M4.");
         if (name == "MUL" && flags) { if (width == 4) throw new FormatException("MULS has only a narrow form."); width = 2; }
+        if (width == 2 && !AllowsNarrow(name)) throw new FormatException($"{name} has no narrow form.");
         if (width == 4 && narrowOnly.Contains(name)) throw new FormatException($"{name} has no wide form.");
         return new(name, condition, flags, types, width != 0 ? width : narrowOnly.Contains(name) ? 2 : 4);
     }

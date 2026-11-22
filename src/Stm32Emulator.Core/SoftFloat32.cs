@@ -92,7 +92,13 @@ internal static class SoftFloat32
         if (negateProduct) x ^= 0x80000000; if (negateAddend) addend ^= 0x80000000;
         addend = Input(addend, ref status); x = Input(x, ref status); y = Input(y, ref status);
         var badProduct = Inf(x) && Zero(y) || Inf(y) && Zero(x);
-        if (Nan(addend) || Nan(x) || Nan(y)) { if (badProduct) status |= Ioc; return ProcessNaNs(ref status, addend, x, y); }
+        if (Nan(addend) || Nan(x) || Nan(y))
+        {
+            // ARM's invalid 0*infinity product overrides a quiet addend NaN's payload.
+            // A signaling addend still follows the normal signaling-NaN priority.
+            if (badProduct && (addend & 0x400000) != 0) return Invalid(ref status);
+            return ProcessNaNs(ref status, addend, x, y);
+        }
         if (badProduct) return Invalid(ref status);
         var productSign = (x ^ y) >> 31 != 0; var addSign = addend >> 31 != 0;
         if (Inf(x) || Inf(y)) return Inf(addend) && productSign != addSign ? Invalid(ref status) : Sign(productSign) | 0x7f800000;

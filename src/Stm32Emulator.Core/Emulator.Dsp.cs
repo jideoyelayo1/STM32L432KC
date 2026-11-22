@@ -51,7 +51,7 @@ public sealed partial class Emulator
             long y = (int)V(2); if (op.StartsWith("QD", StringComparison.Ordinal)) y = Saturate(y * 2, 32, true);
             Put((uint)Saturate((long)(int)V(1) + (op.EndsWith("SUB", StringComparison.Ordinal) ? -y : y), 32, true)); return true;
         }
-        if (InstructionSet.All.First(x => x.Name == op).Family == "DSP")
+        if (InstructionSet.Family(op) == "DSP")
         {
             var prefix = new[] { "UQ", "UH", "SH", "S", "U", "Q" }.First(p => op.StartsWith(p, StringComparison.Ordinal));
             var kind = op[prefix.Length..]; var width = kind.EndsWith('8') ? 8 : 16; var count = 32 / width;
@@ -70,7 +70,7 @@ public sealed partial class Emulator
             }
             if (prefix is "S" or "U") Flags = Flags with { Ge = ge }; Put(result); return true;
         }
-        if (InstructionSet.All.First(x => x.Name == op).Family != "Multiply") return false;
+        if (InstructionSet.Family(op) != "Multiply") return false;
         var longResult = op is "UMULL" or "SMULL" or "UMLAL" or "SMLAL" or "UMAAL" || op.StartsWith("SMLAL", StringComparison.Ordinal) || op.StartsWith("SMLSL", StringComparison.Ordinal);
         if (longResult)
         {
