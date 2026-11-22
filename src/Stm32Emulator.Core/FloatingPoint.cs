@@ -17,7 +17,10 @@ internal static class FloatingPoint
         }
         if (op is "VLDR" or "VSTR")
         {
-            Count(2); Reg(0, 'S', 'D'); if (a[1] is not MemoryOperand m || m.Base.Bank != 'R' || m.Writeback || m.PostIndex || m.Shift != null || m.Offset is not ImmediateOperand { Value: <= 1020 } v || v.Value % 4 != 0) throw new FormatException("VFP memory uses a word-aligned immediate offset without writeback."); return;
+            Count(2); var transferRegister = Reg(0, 'S', 'D');
+            if (types.Length > 1 || types.Length == 1 && !(transferRegister.Bank == 'D' ? types[0] is "F64" or "64" : types[0] is "F32" or "32")) throw new FormatException("Transfer type must match the S/D register width.");
+            if (op == "VLDR" && a[1] is ImmediateOperand) return;
+            if (a[1] is not MemoryOperand m || m.Base.Bank != 'R' || m.Writeback || m.PostIndex || m.Shift != null || m.Offset is not ImmediateOperand { Value: <= 1020 } v || v.Value % 4 != 0) throw new FormatException("VFP memory uses a word-aligned immediate offset without writeback."); return;
         }
         if (op is "VLDM" or "VSTM" or "VLDMDB" or "VSTMDB" or "VPOP" or "VPUSH")
         {
@@ -83,9 +86,9 @@ internal static class FloatingPoint
         }
         if (op is "VLDR" or "VSTR")
         {
-            var m = (MemoryOperand)a[1]; var (address, _) = cpu.Address(m); var width = R(0).Bank == 'D' ? 8 : 4; cpu.Memory.ValidateAccess(address, width, op == "VSTR", true);
+            var address = a[1] is ImmediateOperand literal ? literal.Value : cpu.Address((MemoryOperand)a[1]).Address; var width = R(0).Bank == 'D' ? 8 : 4; cpu.Memory.ValidateAccess(address, width, op == "VSTR", true);
             if (op == "VLDR") { var low = cpu.Memory.ReadWord(address); if (width == 8) cpu.WriteDouble(R(0), low | (ulong)cpu.Memory.ReadWord(address + 4) << 32); else Put(low); }
-            else { var value = width == 8 ? cpu.ReadDouble(R(0)) : V(0); cpu.Memory.WriteWord(address, (uint)value); if (width == 8) cpu.Memory.WriteWord(address + 4, (uint)(value >> 32)); } return;
+            else { var value = width == 8 ? cpu.ReadDouble(R(0)) : V(0); if (width == 8) cpu.Memory.WriteWords(new[] { (address, (uint)value), (address + 4, (uint)(value >> 32)) }); else cpu.Memory.WriteWord(address, (uint)value); } return;
         }
         if (op is "VLDM" or "VSTM" or "VLDMDB" or "VSTMDB" or "VPOP" or "VPUSH")
         {
@@ -94,8 +97,14 @@ internal static class FloatingPoint
             var before = cpu.Read(b); var size = (uint)(list.Length * stride); var start = dec ? before - size : before;
             for (var n = 0; n < list.Length; n++) cpu.Memory.ValidateAccess(start + (uint)(n * stride), stride, !load, true);
             var values = list.Select((r, n) => load ? cpu.Memory.ReadWord(start + (uint)(n * stride)) | (stride == 8 ? (ulong)cpu.Memory.ReadWord(start + (uint)(n * stride) + 4) << 32 : 0) : stride == 8 ? cpu.ReadDouble(r) : cpu.Read(r)).ToArray();
-            for (var n = 0; n < list.Length; n++)
-            { if (load) { if (stride == 8) cpu.WriteDouble(list[n], values[n]); else cpu.Write(list[n], (uint)values[n]); } else { cpu.Memory.WriteWord(start + (uint)(n * stride), (uint)values[n]); if (stride == 8) cpu.Memory.WriteWord(start + (uint)(n * stride) + 4, (uint)(values[n] >> 32)); } }
+            if (load)
+                for (var n = 0; n < list.Length; n++) { if (stride == 8) cpu.WriteDouble(list[n], values[n]); else cpu.Write(list[n], (uint)values[n]); }
+            else
+            {
+                var writes = new List<(uint, uint)>();
+                for (var n = 0; n < list.Length; n++) { writes.Add((start + (uint)(n * stride), (uint)values[n])); if (stride == 8) writes.Add((start + (uint)(n * stride) + 4, (uint)(values[n] >> 32))); }
+                cpu.Memory.WriteWords(writes);
+            }
             if (b.Writeback) cpu.Write(b, dec ? before - size : before + size); return;
         }
         if (op is "VCVT" or "VCVTR")
@@ -116,8 +125,8 @@ internal static class FloatingPoint
         var x = V(a.Length == 2 ? 0 : 1); var y = V(a.Length == 2 ? 1 : 2); uint result;
         if (op is "VFMA" or "VFMS" or "VFNMA" or "VFNMS") result = SoftFloat32.Fused(V(0), x, y, op is "VFMS" or "VFNMA", op is "VFNMA" or "VFNMS", ref cpu.fpscr);
         else if (op is "VMLA" or "VMLS" or "VNMLA" or "VNMLS")
-        { var product = SoftFloat32.Multiply(x, y, ref cpu.fpscr); result = SoftFloat32.Add(V(0), product ^ (op is "VMLS" or "VNMLS" ? 0x80000000u : 0), ref cpu.fpscr); if (op is "VNMLA" or "VNMLS") result ^= 0x80000000; }
-        else result = op switch { "VADD" => SoftFloat32.Add(x, y, ref cpu.fpscr), "VSUB" => SoftFloat32.Add(x, y ^ 0x80000000, ref cpu.fpscr), "VMUL" or "VNMUL" => SoftFloat32.Multiply(x, y, ref cpu.fpscr) ^ (op == "VNMUL" ? 0x80000000u : 0), "VDIV" => SoftFloat32.Divide(x, y, ref cpu.fpscr), _ => throw new InvalidOperationException($"No floating-point execution for {op}.") };
+        { var product = SoftFloat32.Multiply(x, y, ref cpu.fpscr); result = SoftFloat32.Add(V(0) ^ (op is "VNMLA" or "VNMLS" ? 0x80000000u : 0), product ^ (op is "VMLS" or "VNMLA" ? 0x80000000u : 0), ref cpu.fpscr); }
+        else result = op switch { "VADD" => SoftFloat32.Add(x, y, ref cpu.fpscr), "VSUB" => SoftFloat32.Subtract(x, y, ref cpu.fpscr), "VMUL" or "VNMUL" => SoftFloat32.Multiply(x, y, ref cpu.fpscr) ^ (op == "VNMUL" ? 0x80000000u : 0), "VDIV" => SoftFloat32.Divide(x, y, ref cpu.fpscr), _ => throw new InvalidOperationException($"No floating-point execution for {op}.") };
         Put(result);
     }
 }

@@ -18,7 +18,7 @@ public static class InstructionSet
         Add("Scalar", "ADC ADD ADR AND ASR BFC BFI BIC CLZ CMN CMP EOR LSL LSR MOV MOVT MOVW MVN ORN ORR RBIT REV REV16 REVSH ROR RRX RSB SBC SBFX SSAT SSAT16 SUB SXTB SXTB16 SXTH SXTAB SXTAB16 SXTAH TEQ TST UBFX USAT USAT16 UXTB UXTB16 UXTH UXTAB UXTAB16 UXTAH PKHBT PKHTB SEL");
         Add("Memory", "LDM LDMDB LDR LDRB LDRBT LDRD LDREX LDREXB LDREXH LDRH LDRHT LDRSB LDRSBT LDRSH LDRSHT LDRT POP PUSH STM STMDB STR STRB STRBT STRD STREX STREXB STREXH STRH STRHT STRT CLREX PLD PLI");
         Add("Control", "B BL BLX BX CBNZ CBZ IT TBB TBH");
-        Add("System", "BKPT CPSID CPSIE DMB DSB ISB MRS MSR NOP SEV SVC UDF WFE WFI YIELD");
+        Add("System", "BKPT CPSID CPSIE DBG DMB DSB ISB MRS MSR NOP SEV SVC UDF WFE WFI YIELD");
         Add("Multiply", "MLA MLS MUL SDIV UDIV SMLABB SMLABT SMLATB SMLATT SMLAD SMLADX SMLAL SMLALBB SMLALBT SMLALTB SMLALTT SMLALD SMLALDX SMLAWB SMLAWT SMLSD SMLSDX SMLSLD SMLSLDX SMMLA SMMLAR SMMLS SMMLSR SMMUL SMMULR SMUAD SMUADX SMULBB SMULBT SMULTB SMULTT SMULL SMULWB SMULWT SMUSD SMUSDX UMAAL UMLAL UMULL USAD8 USADA8");
         Add("DSP", "QADD QDADD QDSUB QSUB");
         foreach (var prefix in new[] { "S", "Q", "SH", "U", "UQ", "UH" })
@@ -34,7 +34,7 @@ public static class InstructionSet
         var types = parts.Skip(1).Where(s => s is not ("W" or "N")).ToArray();
         if (parts.Contains("W")) width = 4;
         if (parts.Contains("N")) { if (width != 0) throw new FormatException("Conflicting width suffixes."); width = 2; }
-        if (Regex.IsMatch(name, "^IT[TE]{0,3}$")) return new(name, condition, false, [], 2);
+        if (Regex.IsMatch(name, "^IT[TE]{0,3}$")) { if (types.Length != 0 || width == 4) throw new FormatException("IT has only a narrow form without type suffixes."); return new(name, condition, false, [], 2); }
         var aliases = new Dictionary<string, string> { ["ADDW"] = "ADD", ["SUBW"] = "SUB", ["LDMIA"] = "LDM", ["LDMFD"] = "LDM", ["LDMEA"] = "LDMDB", ["STMIA"] = "STM", ["STMEA"] = "STM", ["STMFD"] = "STMDB", ["VLDMIA"] = "VLDM", ["VSTMIA"] = "VSTM", ["VSTMDB"] = "VSTMDB", ["VLDMDB"] = "VLDMDB" };
         // Prefer a complete name: TEQ, SMLALS, etc. must not lose a condition by accident.
         if (!operations.ContainsKey(name) && !aliases.ContainsKey(name))
@@ -52,7 +52,9 @@ public static class InstructionSet
         if (name is "VSTMDB" or "VLDMDB") { }
         else if (!operations.ContainsKey(name)) throw new FormatException($"Unsupported instruction '{text}'. Expected an ARMv7E-M or FPv4-SP-D16 instruction.");
         if (types.Length > 0 && !name.StartsWith('V')) throw new FormatException("Only floating-point instructions accept type suffixes.");
-        if (types.Any(t => t is not ("F32" or "F16" or "S32" or "U32" or "S16" or "U16" or "32" or "64"))) throw new FormatException("Unsupported floating-point type; double-precision arithmetic is not available on Cortex-M4.");
+        if (types.Any(t => t is not ("F32" or "F64" or "F16" or "S32" or "U32" or "S16" or "U16" or "32" or "64"))) throw new FormatException("Unsupported floating-point type; double-precision arithmetic is not available on Cortex-M4.");
+        if (types.Contains("F64") && name is not ("VLDR" or "VSTR" or "VLDM" or "VSTM" or "VLDMDB" or "VSTMDB" or "VPUSH" or "VPOP")) throw new FormatException("Double-precision arithmetic is unavailable on Cortex-M4.");
+        if (name == "MUL" && flags) { if (width == 4) throw new FormatException("MULS has only a narrow form."); width = 2; }
         if (width == 4 && narrowOnly.Contains(name)) throw new FormatException($"{name} has no wide form.");
         return new(name, condition, flags, types, width != 0 ? width : narrowOnly.Contains(name) ? 2 : 4);
     }

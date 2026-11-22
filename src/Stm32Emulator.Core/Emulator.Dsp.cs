@@ -77,7 +77,7 @@ public sealed partial class Emulator
             var x = V(2); var y = V(3); long product;
             if (op is "UMULL" or "UMLAL" or "UMAAL") product = unchecked((long)((ulong)x * y));
             else if (op is "SMULL" or "SMLAL") product = (long)(int)x * (int)y;
-            else if (op.StartsWith("SMLAL", StringComparison.Ordinal) && op.Length == 7) product = Lane(x, op[^2] == 'T' ? 1 : 0, 16, true) * Lane(y, op[^1] == 'T' ? 1 : 0, 16, true);
+            else if (op.StartsWith("SMLAL", StringComparison.Ordinal) && op[^2..] is "BB" or "BT" or "TB" or "TT") product = Lane(x, op[^2] == 'T' ? 1 : 0, 16, true) * Lane(y, op[^1] == 'T' ? 1 : 0, 16, true);
             else
             {
                 if (op.EndsWith('X')) y = BitOperations.RotateRight(y, 16);
@@ -103,7 +103,7 @@ public sealed partial class Emulator
         }
         if (op.StartsWith("SMULW", StringComparison.Ordinal) || op.StartsWith("SMLAW", StringComparison.Ordinal))
         { valueResult = (long)(int)left * Lane(right, op.EndsWith('T') ? 1 : 0, 16, true) >> 16; if (op.StartsWith("SMLA", StringComparison.Ordinal)) valueResult += (int)V(3); }
-        else if (op.StartsWith("SMUL", StringComparison.Ordinal) || op.StartsWith("SMLA", StringComparison.Ordinal) && op.Length == 6)
+        else if (op.StartsWith("SMUL", StringComparison.Ordinal) || op.StartsWith("SMLA", StringComparison.Ordinal) && op[^2..] is "BB" or "BT" or "TB" or "TT")
         { valueResult = Lane(left, op[^2] == 'T' ? 1 : 0, 16, true) * Lane(right, op[^1] == 'T' ? 1 : 0, 16, true); if (op.StartsWith("SMLA", StringComparison.Ordinal)) valueResult += (int)V(3); }
         else
         {

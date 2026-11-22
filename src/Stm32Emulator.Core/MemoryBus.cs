@@ -77,6 +77,22 @@ public sealed class MemoryBus
         ValidateAccess(address, 2, true); if (InRam(address)) { WriteByte(address, (byte)value); WriteByte(address + 1, (byte)(value >> 8)); }
         else { var aligned = address & ~3u; var shift = (int)(address & 3) * 8; WriteWord(aligned, ReadWord(aligned) & ~(65535u << shift) | (uint)value << shift); }
     }
+    internal void WriteWords(IReadOnlyList<(uint Address, uint Value)> writes)
+    {
+        foreach (var (address, _) in writes) ValidateAccess(address, 4, true);
+        var savedRam = new Dictionary<uint, byte>();
+        foreach (var (address, _) in writes)
+            if (InRam(address)) for (uint n = 0; n < 4; n++) savedRam[address + n] = ram.GetValueOrDefault(address + n);
+        var savedRegisters = new Dictionary<uint, uint>(registers);
+        var savedReservation = reservation; var savedPrescaler1 = prescaler1; var savedPrescaler7 = prescaler7;
+        try { foreach (var (address, value) in writes) WriteWord(address, value); }
+        catch
+        {
+            foreach (var (address, value) in savedRam) { if (value == 0) ram.Remove(address); else ram[address] = value; }
+            registers.Clear(); foreach (var (address, value) in savedRegisters) registers[address] = value;
+            reservation = savedReservation; prescaler1 = savedPrescaler1; prescaler7 = savedPrescaler7; throw;
+        }
+    }
     private static bool InRam(uint address) => address >= RamBase && address - RamBase < RamSize;
     private static void Aligned(uint address)
     { if ((address & 3) != 0) throw new InvalidOperationException($"Word address 0x{address:X8} must be four-byte aligned. Use LDRB/STRB for bytes."); }

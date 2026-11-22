@@ -76,10 +76,10 @@ public sealed class AssemblyProgram
                 if (name is ".TEXT" or ".DATA" or ".BSS") { section = name[1..]; continue; }
                 if (name is ".THUMB" or ".SYNTAX" or ".GLOBAL" or ".GLOBL" or ".TYPE" or ".SIZE" or ".CPU" or ".FPU") continue;
                 if (name is ".EQU" or ".SET" or "EQU")
-                { var args = SplitOperands(body); if (args.Length != 2 || symbols.ContainsKey(args[0]) || constants.Any(c => c.Name.Equals(args[0], StringComparison.OrdinalIgnoreCase))) throw new FormatException("Expected a unique constant name and value."); constants.Add((n + 1, args[0], args[1])); continue; }
+                { var args = SplitOperands(body); if (args.Length != 2 || symbols.ContainsKey(args[0]) || constants.Any(c => c.Name.Equals(args[0], StringComparison.OrdinalIgnoreCase))) throw new FormatException("Expected a unique constant name and value."); if (!Regex.IsMatch(args[0], @"^[a-zA-Z_]\w*$")) throw new FormatException("Invalid constant name."); try { symbols.Add(args[0], Expression(args[1], symbols)); } catch (FormatException) { constants.Add((n + 1, args[0], args[1])); } continue; }
                 if (name is ".ALIGN" or ".BALIGN" or ".SPACE" or ".ZERO")
                 {
-                    var amount = Number(body); uint next;
+                    var amount = Expression(body, symbols); uint next;
                     if (name is ".ALIGN" or ".BALIGN") { if (name == ".ALIGN" && amount > 16) throw new FormatException("Alignment exponent is too large."); var boundary = name == ".ALIGN" ? 1u << (int)amount : amount; if (boundary == 0 || (boundary & (boundary - 1)) != 0 || boundary > 65536) throw new FormatException("Alignment must be a bounded power of two."); next = checked((Location() + boundary - 1) & ~(boundary - 1)); }
                     else next = checked(Location() + amount);
                     var size = checked((int)(next - Location())); Reserve(Location(), size, n + 1);
@@ -177,14 +177,29 @@ public sealed class AssemblyProgram
     {
         token = token.Trim().TrimStart('#', '=');
         if (symbols.TryGetValue(token, out var symbol)) return symbol;
-        var match = Regex.Match(token, @"^(.+?)\s*([+\-])\s*(.+)$");
-        if (match.Success) { var a = Expression(match.Groups[1].Value, symbols); var b = Expression(match.Groups[3].Value, symbols); return match.Groups[2].Value == "+" ? unchecked(a + b) : unchecked(a - b); }
-        var negative = token.StartsWith('-'); if (negative) token = token[1..];
-        ulong value;
-        try { value = token.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? ulong.Parse(token[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture) : ulong.Parse(token, NumberStyles.None, CultureInfo.InvariantCulture); }
-        catch (FormatException) { throw new FormatException($"Unknown symbol or invalid immediate '{token}'."); }
-        if (value > uint.MaxValue || negative && value > 0x80000000UL) throw new FormatException("Immediate outside the 32-bit range.");
-        return negative ? unchecked(0u - (uint)value) : (uint)value;
+        uint result = 0; var position = 0; var first = true;
+        while (position < token.Length)
+        {
+            while (position < token.Length && char.IsWhiteSpace(token[position])) position++;
+            var subtract = false;
+            if (position < token.Length && token[position] is '+' or '-') { subtract = token[position] == '-'; position++; }
+            else if (!first) throw new FormatException("Expected + or - in expression.");
+            while (position < token.Length && char.IsWhiteSpace(token[position])) position++;
+            var start = position;
+            while (position < token.Length && (char.IsLetterOrDigit(token[position]) || token[position] is '_' or '.' or '$')) position++;
+            if (start == position) throw new FormatException("Missing expression term.");
+            var term = token[start..position]; uint value;
+            if (!symbols.TryGetValue(term, out value))
+            {
+                ulong wide;
+                try { wide = term.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? ulong.Parse(term[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture) : ulong.Parse(term, NumberStyles.None, CultureInfo.InvariantCulture); }
+                catch (FormatException) { throw new FormatException($"Unknown symbol or invalid immediate '{term}'."); }
+                if (wide > uint.MaxValue || first && subtract && wide > 0x80000000UL) throw new FormatException("Immediate outside the 32-bit range.");
+                value = (uint)wide;
+            }
+            result = subtract ? unchecked(result - value) : unchecked(result + value); first = false;
+        }
+        if (first) throw new FormatException("Missing immediate."); return result;
     }
     private Operand[] ParseArguments(Instruction instruction)
     {
@@ -216,7 +231,7 @@ public sealed class AssemblyProgram
             }
             var shift = Regex.Match(text, @"^(LSL|LSR|ASR|ROR|RRX)(?:\s+(.+))?$", RegexOptions.IgnoreCase);
             if (shift.Success) return new ShiftOperand(shift.Groups[1].Value.ToUpperInvariant(), Parse(shift.Groups[2].Success ? shift.Groups[2].Value : "#1"));
-            if (Regex.IsMatch(text, @"^(APSR(_NZCVQ|_NZCV|_G)?|IAPSR|EAPSR|XPSR|IPSR|EPSR|IEPSR|MSP|PSP|PRIMASK|BASEPRI(_MAX)?|FAULTMASK|CONTROL|FPSCR|SY|ST|ISH(ST)?|NSH(ST)?|OSH(ST)?|I|F|IF|FI|EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)$", RegexOptions.IgnoreCase)) return new NamedOperand(text.ToUpperInvariant());
+            if (Regex.IsMatch(text, @"^(APSR(_NZCVQG|_NZCVQ|_NZCV|_G)?|IAPSR|EAPSR|XPSR|IPSR|EPSR|IEPSR|MSP|PSP|PRIMASK|BASEPRI(_MAX)?|FAULTMASK|CONTROL|FPSCR|SY|ST|ISH(ST)?|NSH(ST)?|OSH(ST)?|I|F|IF|FI|EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)$", RegexOptions.IgnoreCase)) return new NamedOperand(text.ToUpperInvariant());
             if (instruction.Operation.Name == "VMOV" && text.StartsWith('#')) return new ImmediateOperand(BitConverter.SingleToUInt32Bits(float.Parse(text[1..], CultureInfo.InvariantCulture)));
             return new ImmediateOperand(Expression(text, symbols));
         }

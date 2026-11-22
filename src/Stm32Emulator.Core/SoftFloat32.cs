@@ -65,6 +65,8 @@ internal static class SoftFloat32
         var negative = sum.Sign < 0 || sum.IsZero && (Zero(x) && Zero(y) && a.Sign == b.Sign ? a.Sign : (status >> 22 & 3) == 2);
         return Round(negative, BigInteger.Abs(sum), BigInteger.One, e, ref status);
     }
+    internal static uint Subtract(uint x, uint y, ref uint status)
+    { if (Nan(x) || Nan(y)) { x = Input(x, ref status); y = Input(y, ref status); return ProcessNaNs(ref status, x, y); } return Add(x, y ^ 0x80000000, ref status); }
     internal static uint Multiply(uint x, uint y, ref uint status)
     {
         x = Input(x, ref status); y = Input(y, ref status);
@@ -87,11 +89,12 @@ internal static class SoftFloat32
     }
     internal static uint Fused(uint addend, uint x, uint y, bool negateProduct, bool negateAddend, ref uint status)
     {
+        if (negateProduct) x ^= 0x80000000; if (negateAddend) addend ^= 0x80000000;
         addend = Input(addend, ref status); x = Input(x, ref status); y = Input(y, ref status);
         var badProduct = Inf(x) && Zero(y) || Inf(y) && Zero(x);
         if (Nan(addend) || Nan(x) || Nan(y)) { if (badProduct) status |= Ioc; return ProcessNaNs(ref status, addend, x, y); }
         if (badProduct) return Invalid(ref status);
-        var productSign = ((x ^ y) >> 31 != 0) ^ negateProduct; var addSign = (addend >> 31 != 0) ^ negateAddend;
+        var productSign = (x ^ y) >> 31 != 0; var addSign = addend >> 31 != 0;
         if (Inf(x) || Inf(y)) return Inf(addend) && productSign != addSign ? Invalid(ref status) : Sign(productSign) | 0x7f800000;
         if (Inf(addend)) return Sign(addSign) | 0x7f800000;
         var a = Unpack(x); var b = Unpack(y); var c = Unpack(addend); var pe = a.Exponent + b.Exponent; var e = Math.Min(pe, c.Exponent);
@@ -131,7 +134,10 @@ internal static class SoftFloat32
     internal static uint FromInteger(uint x, bool signed, int width, int fractionBits, ref uint status)
     {
         var value = signed ? width == 16 ? new BigInteger((short)x) : new BigInteger((int)x) : new BigInteger(width == 16 ? x & 65535 : x);
-        return Round(value.Sign < 0, BigInteger.Abs(value), BigInteger.One, -fractionBits, ref status);
+        if (fractionBits == 0) return Round(value.Sign < 0, BigInteger.Abs(value), BigInteger.One, 0, ref status);
+        // Fixed-point-to-float conversions always use round-to-nearest, independently of FPSCR.RMode.
+        var nearestStatus = status & ~(3u << 22); var result = Round(value.Sign < 0, BigInteger.Abs(value), BigInteger.One, -fractionBits, ref nearestStatus);
+        status |= nearestStatus & 0x9f; return result;
     }
     internal static uint ToInteger(uint x, bool signed, int width, int fractionBits, bool currentRounding, ref uint status)
     {
@@ -154,7 +160,7 @@ internal static class SoftFloat32
     internal static ushort ToHalf(uint x, ref uint status)
     {
         x = Input(x, ref status); var sign = (x >> 31) != 0; var signBits = sign ? 0x8000u : 0u; var alternate = (status & 1u << 26) != 0;
-        if (Nan(x)) { if (alternate) { status |= Ioc; return (ushort)signBits; } var nan = ProcessNaNs(ref status, x); return (ushort)(signBits | 0x7c00 | (nan >> 13 & 1023)); }
+        if (Nan(x)) { if (alternate) { status |= Ioc; return (ushort)signBits; } var nan = ProcessNaNs(ref status, x); return (ushort)((nan >> 16 & 0x8000) | 0x7c00 | (nan >> 13 & 1023)); }
         if (Inf(x)) { if (alternate) status |= Ioc; return (ushort)(signBits | (alternate ? 0x7fffu : 0x7c00u)); }
         var a = Unpack(x); if (a.Magnitude.IsZero) return (ushort)signBits;
         var e = Log2(a.Magnitude, BigInteger.One) + a.Exponent; var step = Math.Max(e - 10, -24); var n = a.Magnitude; var d = BigInteger.One; var shift = a.Exponent - step; if (shift >= 0) n <<= shift; else d <<= -shift;

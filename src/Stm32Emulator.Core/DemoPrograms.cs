@@ -104,6 +104,53 @@ public static class DemoPrograms
             STR r0, [r2]
             loop:
             B loop
+            """),
+        new DemoProgram("calls", "Call a function", "Follow BL, stack saves and POP {pc} through a nested function call.",
+            "R0 finishes at 12. SP returns to 0x20010000; LR and PC contain code addresses.", """
+            MOV r0,#7
+            BL outer
+            B finished
+            outer:
+            PUSH {lr}
+            BL inner
+            POP {pc}
+            inner:
+            ADD r0,r0,#5
+            BX lr
+            finished:
+            NOP
+            """),
+        new DemoProgram("dsp", "Explore DSP saturation", "Compare signed packed arithmetic with saturating arithmetic and inspect Q and GE.",
+            "R2 is 0x7FFF7FFF after QADD16. SSAT clips R3 to 127 and sets sticky Q. SADD16 updates GE.", """
+            LDR r0,=0x7fff7fff
+            LDR r1,=0x00010001
+            QADD16 r2,r0,r1
+            MOV r3,#300
+            SSAT r3,#8,r3
+            SADD16 r4,r0,r1
+            SEL r5,r0,r1
+            """),
+        new DemoProgram("float", "Inspect floating-point rounding", "Change FPSCR rounding and compare rounded conversions with exact fused arithmetic.",
+            "S2 is 3.0. S3 contains the integer bits for 2 after rounding 1.5 upward; S4 contains 1 after rounding toward zero. Inspect FPSCR flags and raw bits.", """
+            VMOV.F32 s0,#1.0
+            VMOV.F32 s1,#2.0
+            VADD.F32 s2,s0,s1
+            VMOV.F32 s3,#1.5
+            MOV r0,#0x00400000
+            VMSR FPSCR,r0
+            VCVTR.S32.F32 s3,s3
+            VMOV.F32 s4,#1.5
+            VCVT.S32.F32 s4,s4
+            VMRS r1,FPSCR
+            """),
+        new DemoProgram("waits", "Wake a waiting program", "Use the event and interrupt controls to resume WFE and WFI, then inspect a service-call trap.",
+            "Signal an event, Run, signal an interrupt, then Run. SVC #42 pauses explicitly; another Run finishes with R0 = 3. No exception handler runs.", """
+            WFE
+            MOV r0,#1
+            WFI
+            MOV r0,#2
+            SVC #42
+            MOV r0,#3
             """)
     };
 }

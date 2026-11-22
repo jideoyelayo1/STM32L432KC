@@ -27,16 +27,19 @@ internal static class InstructionValidation
         if (op.StartsWith("IT", StringComparison.Ordinal)) { Count(1); if (a[0] is not NamedOperand c || c.Name == "AL" || !InstructionSet.Conditions.Contains(c.Name)) throw new FormatException("Expected IT condition."); return; }
         if (op is "NOP" or "SEV" or "WFE" or "WFI" or "YIELD" or "CLREX") { Count(0); return; }
         if (op is "BKPT" or "SVC" or "UDF") { Count(0, 1); if (a.Length == 1) Imm(0, op == "UDF" ? 65535u : 255u); return; }
+        if (op == "DBG") { Count(1); Imm(0,15); return; }
         if (op is "DMB" or "DSB" or "ISB") { Count(0, 1); if (a.Length == 1 && a[0] is not NamedOperand && a[0] is not ImmediateOperand { Value: <= 15 }) throw new FormatException("Invalid barrier option."); return; }
         if (op is "CPSID" or "CPSIE") { Count(1); if (a[0] is not NamedOperand { Name: "I" or "F" or "IF" or "FI" }) throw new FormatException("Expected interrupt mask I/F."); return; }
         if (op is "MRS" or "MSR")
         {
-            Count(2); Reg(op == "MRS" ? 0 : 1); if (a[op == "MRS" ? 1 : 0] is not NamedOperand s || s.Name is "FPSCR" || InstructionSet.Conditions.Contains(s.Name)) throw new FormatException("Expected an ARM special register."); return;
+            Count(2); if (Reg(op == "MRS" ? 0 : 1).Index >= 13) throw new FormatException("System transfers require R0–R12.");
+            var allowed = op == "MRS" ? "APSR IAPSR EAPSR XPSR IPSR EPSR IEPSR MSP PSP PRIMASK BASEPRI FAULTMASK CONTROL" : "APSR APSR_NZCVQ APSR_NZCVQG APSR_G MSP PSP PRIMASK BASEPRI BASEPRI_MAX FAULTMASK CONTROL";
+            if (a[op == "MRS" ? 1 : 0] is not NamedOperand s || !allowed.Split(' ').Contains(s.Name)) throw new FormatException("Invalid or read-only ARM special register."); return;
         }
         if (op is "B" or "BL") { Count(1); program.RegisterTarget(Imm(0)); return; }
         if (op is "BX" or "BLX") { Count(1); if (Reg(0).Index == 15) throw new FormatException("PC cannot be a BX/BLX operand."); return; }
-        if (op is "CBZ" or "CBNZ") { Count(2); Reg(0); program.RegisterTarget(Imm(1)); return; }
-        if (op is "TBB" or "TBH") { Count(1); var m = Memory(0); if (m.Offset is not RegisterOperand || m.Writeback || m.Subtract) throw new FormatException("Table branches require [base, index]."); return; }
+        if (op is "CBZ" or "CBNZ") { Count(2); if (Reg(0).Index > 7) throw new FormatException("CBZ/CBNZ require R0–R7."); program.RegisterTarget(Imm(1)); return; }
+        if (op is "TBB" or "TBH") { Count(1); var m = Memory(0); if (m.Offset is not RegisterOperand || m.Writeback || m.Subtract || op == "TBB" && m.Shift is not null || op == "TBH" && m.Shift is not null and not ShiftOperand { Kind: "LSL", Amount: ImmediateOperand { Value: 1 } }) throw new FormatException("Table branches require [base, index]."); return; }
         if (op is "PUSH" or "POP") { Count(1); var l = List(0); if (l.Registers.Any(r => r.Index == 13 || op == "PUSH" && r.Index == 15)) throw new FormatException("Invalid stack register list."); return; }
         if (op is "LDM" or "LDMDB" or "STM" or "STMDB")
         { Count(2); var b = Reg(0); var l = List(1); if (b.Index == 15 || b.Writeback && l.Registers.Any(r => r.Index == b.Index) || l.Registers.Any(r => r.Index == 13)) throw new FormatException("Invalid multiple-transfer base/list."); return; }
@@ -47,9 +50,11 @@ internal static class InstructionValidation
             if (pair || exclusiveStore) Reg(1);
             if (op == "LDR" && a[1] is ImmediateOperand) return; // literal pseudo-load
             var m = Memory(a.Length - 1);
-            if (op.StartsWith("LDR", StringComparison.Ordinal) && m.Writeback && a.Take(a.Length - 1).OfType<RegisterOperand>().Any(r => r.Index == m.Base.Index)) throw new FormatException("Load destination overlaps writeback base.");
+            if (m.Writeback && a.Take(a.Length - 1).OfType<RegisterOperand>().Any(r => r.Index == m.Base.Index)) throw new FormatException("Load destination overlaps writeback base.");
             if ((pair || op.Contains("EX", StringComparison.Ordinal)) && (a[0] is RegisterOperand { Index: >= 13 } || pair && a[1] is RegisterOperand { Index: >= 13 })) throw new FormatException("Invalid double/exclusive register.");
             if (op.Contains("EX", StringComparison.Ordinal) && (m.PostIndex || m.Writeback || m.Offset is not ImmediateOperand)) throw new FormatException("Exclusive accesses require a simple address.");
+            if (pair && ((RegisterOperand)a[0]).Index == ((RegisterOperand)a[1]).Index) throw new FormatException("Double-transfer registers must differ.");
+            if (exclusiveStore && (((RegisterOperand)a[1]).Index >= 13 || ((RegisterOperand)a[0]).Index == ((RegisterOperand)a[1]).Index || ((RegisterOperand)a[0]).Index == m.Base.Index)) throw new FormatException("Exclusive status register must differ from source and base.");
             return;
         }
         if (op.StartsWith('V')) { FloatingPoint.Validate(i); return; }

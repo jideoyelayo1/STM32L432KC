@@ -106,18 +106,19 @@ public sealed partial class Emulator
     {
         if (Program is null) throw new InvalidOperationException("Load a program first.");
         if (Status is ExecutionStatus.Completed or ExecutionStatus.Faulted or ExecutionStatus.Waiting) return Snapshot();
-        var i = Program.Instructions[InstructionIndex]; nextIndex = InstructionIndex + 1; Stop = ExecutionStop.Step; TrapImmediate = null; Message = "Paused. Step or Run to continue.";
+        if (InstructionIndex >= Program.Instructions.Count) { Status = ExecutionStatus.Completed; Stop = ExecutionStop.Completed; Message = "Program completed."; return Snapshot(); }
+        var i = Program.Instructions[InstructionIndex]; nextIndex = -1; Stop = ExecutionStop.Step; TrapImmediate = null; Message = "Paused. Step or Run to continue.";
         try
         {
             var execute = Condition(i.Operation.Condition);
             if (conditionalExecution.Count != 0) { var predicate = conditionalExecution.Dequeue(); execute &= Condition(predicate.Condition) != predicate.Invert; }
             Status = ExecutionStatus.Paused;
             if (execute) Execute(i);
-            Memory.AdvanceTicks(); InstructionsExecuted++; InstructionIndex = nextIndex; UpdatePc();
+            Memory.AdvanceTicks(); InstructionsExecuted++; if (nextIndex == -1) nextIndex = Program.RegisterTarget(i.Address!.Value + (uint)i.Width); InstructionIndex = nextIndex; UpdatePc();
             if (Status != ExecutionStatus.Waiting && Stop is ExecutionStop.Step or ExecutionStop.Yield && InstructionIndex >= Program.Instructions.Count) { Status = ExecutionStatus.Completed; Stop = ExecutionStop.Completed; Message = "Program completed."; }
         }
         catch (Exception e) when (e is FormatException or InvalidOperationException or OverflowException or ArgumentException)
-        { Status = ExecutionStatus.Faulted; Stop = ExecutionStop.Fault; Message = new AssemblyException(i.Line, e.Message).Message; }
+        { Status = ExecutionStatus.Faulted; if (Stop != ExecutionStop.UndefinedInstruction) Stop = ExecutionStop.Fault; Message = new AssemblyException(i.Line, e.Message).Message; }
         return Snapshot();
     }
     private void Execute(Instruction i)
@@ -175,7 +176,7 @@ public sealed partial class Emulator
         var a = i.Arguments; var op = i.Operation.Name;
         switch (op)
         {
-            case "NOP": case "DMB": case "DSB": case "ISB": return true;
+            case "NOP": case "DBG": case "DMB": case "DSB": case "ISB": return true;
             case "YIELD": Stop = ExecutionStop.Yield; return true;
             case "CLREX": Memory.ClearExclusive(); return true;
             case "SEV": SignalEvent(); return true;
@@ -183,7 +184,7 @@ public sealed partial class Emulator
             case "WFI": if (interruptPending) interruptPending = false; else { Status = ExecutionStatus.Waiting; Stop = ExecutionStop.WaitForInterrupt; Message = "Waiting for interrupt. Signal an interrupt to wake; no handler is dispatched."; } return true;
             case "BKPT": case "SVC":
                 Stop = op == "BKPT" ? ExecutionStop.Breakpoint : ExecutionStop.ServiceCall; TrapImmediate = a.Length == 0 ? 0 : Value(a[0]); Memory.ClearExclusive(); Message = op == "BKPT" ? "Breakpoint reached." : $"Service call #{TrapImmediate}. Step or Run to continue without dispatching a handler."; return true;
-            case "UDF": throw new InvalidOperationException("Undefined instruction trap.");
+            case "UDF": Stop = ExecutionStop.UndefinedInstruction; TrapImmediate = a.Length == 0 ? 0 : Value(a[0]); throw new InvalidOperationException("Undefined instruction trap.");
             case "CPSID": case "CPSIE":
                 if ((control & 1) == 0) { var mask = ((NamedOperand)a[0]).Name; if (mask.Contains('I')) primask = op == "CPSID" ? 1u : 0; if (mask.Contains('F')) faultmask = op == "CPSID" ? 1u : 0; } return true;
             case "MRS": Write((RegisterOperand)a[0], ReadSystem(((NamedOperand)a[1]).Name)); return true;
@@ -193,8 +194,8 @@ public sealed partial class Emulator
     }
     private uint ReadSystem(string name) => name switch
     {
-        "APSR" or "APSR_NZCVQ" or "APSR_G" or "IAPSR" => Flags.Packed,
-        "XPSR" or "EAPSR" => Flags.Packed | 1u << 24, "IPSR" => 0, "EPSR" or "IEPSR" => 1u << 24,
+        "APSR" or "APSR_NZCVQG" or "APSR_NZCVQ" or "APSR_G" or "IAPSR" => Flags.Packed,
+        "XPSR" or "EAPSR" => Flags.Packed, "IPSR" or "EPSR" or "IEPSR" => 0,
         "MSP" => (control & 1) == 0 ? msp : 0, "PSP" => (control & 1) == 0 ? psp : 0, "PRIMASK" => (control & 1) == 0 ? primask : 0, "BASEPRI" or "BASEPRI_MAX" => (control & 1) == 0 ? basepri : 0, "FAULTMASK" => (control & 1) == 0 ? faultmask : 0, "CONTROL" => control,
         _ => throw new FormatException("Unsupported special register.")
     };
@@ -202,7 +203,7 @@ public sealed partial class Emulator
     { if (nzcvq) Flags = Flags with { N = (v & 0x80000000) != 0, Z = (v & 0x40000000) != 0, C = (v & 0x20000000) != 0, V = (v & 0x10000000) != 0, Q = (v & 0x08000000) != 0 }; if (ge) Flags = Flags with { Ge = (byte)(v >> 16 & 15) }; }
     private void WriteSystem(string name, uint v)
     {
-        if (name is "APSR" or "APSR_NZCVQ" or "APSR_G") { SetApsr(v, name != "APSR_G", name != "APSR_NZCVQ"); return; }
+        if (name is "APSR" or "APSR_NZCVQG" or "APSR_NZCVQ" or "APSR_G") { SetApsr(v, name != "APSR_G", name != "APSR_NZCVQ"); return; }
         if ((control & 1) != 0) return;
         switch (name)
         {
@@ -224,14 +225,16 @@ public sealed partial class Emulator
             var locations = Enumerable.Range(0, list.Length).Select(n => start + (uint)n * 4).ToArray(); foreach (var location in locations) Memory.ValidateAccess(location, 4, !load, true);
             var values = load ? locations.Select(Memory.ReadWord).ToArray() : list.Select(Read).ToArray();
             if (load && list.Any(r => r.Index == 15)) Program!.RegisterTarget(values[Array.FindIndex(list, r => r.Index == 15)]);
-            for (var j = 0; j < list.Length; j++) { if (load) Write(list[j], values[j]); else Memory.WriteWord(locations[j], values[j]); }
+            if (load) { for (var j = 0; j < list.Length; j++) Write(list[j], values[j]); }
+            else Memory.WriteWords(locations.Select((location, j) => (location, values[j])).ToArray());
             if (b.Writeback) Write(b, dec ? before - bytes : before + bytes); return true;
         }
         if (!(op.StartsWith("LDR", StringComparison.Ordinal) || op.StartsWith("STR", StringComparison.Ordinal))) return false;
         var loadMemory = op.StartsWith("LDR", StringComparison.Ordinal); var exclusive = op.Contains("EX", StringComparison.Ordinal); var pair = op is "LDRD" or "STRD";
-        if (op == "LDR" && a[1] is ImmediateOperand literal) { Write((RegisterOperand)a[0], literal.Value); return true; }
+        if (op == "LDR" && a[1] is ImmediateOperand literal) { Write((RegisterOperand)a[0], i.Operands[1].StartsWith('=') ? literal.Value : Memory.ReadWord(literal.Value)); return true; }
         var m = (MemoryOperand)a[^1]; var (address, updated) = Address(m); var width = op.EndsWith('B') || op.EndsWith("BT", StringComparison.Ordinal) || op is "LDRSB" or "LDRSBT" ? 1 : op.EndsWith('H') || op.EndsWith("HT", StringComparison.Ordinal) ? 2 : 4;
         Memory.ValidateAccess(address, pair ? 8 : width, !loadMemory, pair || exclusive);
+        if (exclusive && (address < MemoryBus.RamBase || address - MemoryBus.RamBase >= MemoryBus.RamSize)) throw new InvalidOperationException("Exclusive accesses require SRAM.");
         if (loadMemory)
         {
             uint v = width == 1 ? Memory.ReadByte(address) : width == 2 ? Memory.ReadHalf(address) : Memory.ReadWord(address);
@@ -244,7 +247,7 @@ public sealed partial class Emulator
         {
             var value = Value(a[exclusive ? 1 : 0]); var second = pair ? Value(a[1]) : 0;
             var success = !exclusive || Memory.ConsumeExclusive(address, width);
-            if (success) { if (width == 1) Memory.WriteByte(address, (byte)value); else if (width == 2) Memory.WriteHalf(address, (ushort)value); else Memory.WriteWord(address, value); if (pair) Memory.WriteWord(address + 4, second); }
+            if (success) { if (pair) Memory.WriteWords(new[] { (address, value), (address + 4, second) }); else if (width == 1) Memory.WriteByte(address, (byte)value); else if (width == 2) Memory.WriteHalf(address, (ushort)value); else Memory.WriteWord(address, value); }
             if (exclusive) Write((RegisterOperand)a[0], success ? 0u : 1u);
         }
         if (m.Writeback) Write(m.Base, updated); return true;
