@@ -82,6 +82,7 @@
                                         border-bottom:1px solid var(--line)}
                                         .intro{
                                           display:grid;
+                                          overflow-wrap:anywhere;
                                           grid-template-columns:1.6fr 1fr;
                                           gap:60px;
                                           align-items:end;
